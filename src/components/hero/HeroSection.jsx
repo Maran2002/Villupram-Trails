@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Button } from '@/components/common/Button'
 import { Search } from 'lucide-react'
+import HeroImg from '@/app/assets/hero/bg-hero.jpg'
 
 export function HeroSection() {
   return (
@@ -16,7 +17,7 @@ export function HeroSection() {
         transition={{ duration: 1.5 }}
       >
         <Image
-          src="/images/heroes/villupuram-hero.jpg"
+          src={HeroImg.src}
           alt="Villupuram"
           fill
           className="object-cover"
