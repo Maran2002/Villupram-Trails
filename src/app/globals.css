@@ -1,26 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-primary-50: #FEF7E8;
+  --color-primary-100: #FDF0D8;
+  --color-primary-200: #FBE1B0;
+  --color-primary-300: #F9D289;
+  --color-primary-400: #B8860B;
+  --color-primary-500: #9E6B08;
+  --color-primary-600: #845006;
+  --color-primary-700: #6A3E05;
+  --color-primary-800: #502D04;
+  --color-primary-900: #361B03;
+
+  --color-secondary-50: #FEF6F3;
+  --color-secondary-100: #FDEDE7;
+  --color-secondary-200: #FADCCF;
+  --color-secondary-300: #F6CBB7;
+  --color-secondary-400: #A0522D;
+  --color-secondary-500: #8B4513;
+  --color-secondary-600: #75370F;
+  --color-secondary-700: #5F2B0B;
+  --color-secondary-800: #492008;
+  --color-secondary-900: #331505;
+
+  --color-accent-50: #F0FDFA;
+  --color-accent-100: #CFFAF5;
+  --color-accent-200: #A0F3EB;
+  --color-accent-300: #70EEE2;
+  --color-accent-400: #20B2AA;
+  --color-accent-500: #1FA399;
+  --color-accent-600: #169489;
+  --color-accent-700: #0D8578;
+  --color-accent-800: #056B68;
+  --color-accent-900: #004D48;
+
+  --color-neutral-50: #F9F7F4;
+  --color-neutral-100: #F3EFE9;
+  --color-neutral-200: #E8E3D8;
+  --color-neutral-300: #DDD6C9;
+  --color-neutral-400: #9E9A8F;
+  --color-neutral-500: #7A7570;
+  --color-neutral-600: #5A5651;
+  --color-neutral-700: #3C3835;
+  --color-neutral-800: #2C3E50;
+  --color-neutral-900: #1A1917;
+
+  --color-dark-50: #F5F5F5;
+  --color-dark-100: #EEEEEE;
+  --color-dark-200: #E0E0E0;
+  --color-dark-300: #BDBDBD;
+  --color-dark-400: #9E9E9E;
+  --color-dark-500: #757575;
+  --color-dark-600: #616161;
+  --color-dark-700: #424242;
+  --color-dark-800: #212121;
+  --color-dark-900: #121212;
+
+  --font-serif: "Playfair Display", "Cormorant Garamond", serif;
+  --font-sans: "Inter", "Poppins", "Outfit", sans-serif;
+  --font-accent: "Great Vibes", cursive;
+
+  --text-hero-xl: 3.5rem;
+  --text-hero-xl--line-height: 1.1;
+  --text-hero-lg: 3rem;
+  --text-hero-lg--line-height: 1.2;
+  --text-display-2xl: 2.25rem;
+  --text-display-2xl--line-height: 2.5rem;
+  --text-display-xl: 1.875rem;
+  --text-display-xl--line-height: 2.25rem;
+
+  --shadow-premium-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-premium-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-premium-lg: 0 12px 32px rgba(0, 0, 0, 0.16);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply bg-white dark:bg-dark-900 text-neutral-900 dark:text-neutral-50 transition-colors duration-300;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-white/10 dark:bg-white/5 border border-white/20;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
 }

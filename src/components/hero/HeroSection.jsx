@@ -1,0 +1,91 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import Image from 'next/image'
+import { Button } from '@/components/common/Button'
+import { Search } from 'lucide-react'
+
+export function HeroSection() {
+  return (
+    <div className="relative h-screen overflow-hidden bg-gradient-to-b from-neutral-900 to-neutral-800">
+      {/* Background Image */}
+      <motion.div
+        className="absolute inset-0 z-0"
+        initial={{ scale: 1.1 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 1.5 }}
+      >
+        <Image
+          src="/images/heroes/villupuram-hero.jpg"
+          alt="Villupuram"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50" />
+      </motion.div>
+
+      {/* Content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
+        <motion.h1
+          className="text-hero-xl font-serif font-bold text-white text-center mb-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          Discover Hidden Gems Across Villupuram
+        </motion.h1>
+
+        <motion.p
+          className="text-xl text-white/80 text-center mb-8 max-w-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          Curated by travelers, verified by the community
+        </motion.p>
+
+        <motion.div
+          className="w-full max-w-md mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <div className="flex bg-white dark:bg-dark-800 rounded-lg overflow-hidden">
+            <input
+              type="text"
+              placeholder="Search places..."
+              className="flex-1 px-6 py-4 outline-none bg-transparent"
+            />
+            <button className="p-4 text-primary-400 hover:bg-neutral-100 dark:hover:bg-dark-700 transition">
+              <Search size={20} />
+            </button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="flex gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          <Button size="lg">Explore Places</Button>
+          <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
+            Contribute
+          </Button>
+        </motion.div>
+      </div>
+
+      {/* Scroll Indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </motion.div>
+    </div>
+  )
+}

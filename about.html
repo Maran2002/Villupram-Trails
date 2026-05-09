@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>About Us - Villupuram Elite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&amp;family=Playfair+Display:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#001c37",
+                        "tertiary-fixed": "#d2e4ff",
+                        "surface-container-highest": "#ece1d4",
+                        "on-tertiary-container": "#fdfcff",
+                        "on-surface": "#201b13",
+                        "tertiary-fixed-dim": "#a1c9ff",
+                        "surface-bright": "#fff8f3",
+                        "on-secondary-container": "#773310",
+                        "surface-container-low": "#fdf2e5",
+                        "secondary-container": "#fe9e72",
+                        "background": "#fff8f3",
+                        "outline-variant": "#d3c4af",
+                        "surface-variant": "#ece1d4",
+                        "tertiary-container": "#3477bc",
+                        "on-surface-variant": "#4f4535",
+                        "surface-container": "#f7ecdf",
+                        "outline": "#817563",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#f1e7d9",
+                        "secondary-fixed": "#ffdbcd",
+                        "primary-fixed": "#ffdea6",
+                        "on-tertiary-fixed-variant": "#004880",
+                        "tertiary": "#085ea2",
+                        "inverse-surface": "#353027",
+                        "surface": "#fff8f3",
+                        "primary-container": "#986d00",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#785600",
+                        "on-primary-container": "#fffbff",
+                        "on-background": "#201b13",
+                        "inverse-primary": "#f7bd48",
+                        "on-primary-fixed-variant": "#5d4200",
+                        "secondary": "#944925",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#271900",
+                        "primary-fixed-dim": "#f7bd48",
+                        "surface-dim": "#e3d8cc",
+                        "inverse-on-surface": "#faefe2",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#ffb596",
+                        "on-secondary-fixed-variant": "#76320f",
+                        "surface-tint": "#7b5800",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#360f00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin_mobile": "20px",
+                        "stack_lg": "32px",
+                        "section_padding": "80px",
+                        "stack_sm": "8px",
+                        "stack_md": "16px",
+                        "gutter": "24px",
+                        "container_max_width": "1280px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Outfit"],
+                        "body-lg": ["Outfit"],
+                        "body-md": ["Outfit"],
+                        "headline-lg": ["Playfair Display"],
+                        "display-lg": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "display-lg": ["64px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 248, 243, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(211, 196, 175, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #785600, #986d00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #785600, #986d00);
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(to right, #986d00, #f7bd48);
+            color: #201b13;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="sticky top-0 w-full bg-surface/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm z-50 transition-all duration-300">
+<div class="flex justify-between items-center px-margin_mobile md:px-section_padding h-20 max-w-container_max_width mx-auto">
+<a class="font-display-lg text-headline-md text-primary dark:text-primary-fixed" href="#">Villupuram Elite</a>
+<div class="hidden md:flex items-center space-x-gutter font-body-md text-body-md">
+<a class="text-on-surface-variant hover:text-primary hover:bg-primary-container/10 transition-all duration-300 px-3 py-2 rounded-md" href="#">Temples</a>
+<a class="text-on-surface-variant hover:text-primary hover:bg-primary-container/10 transition-all duration-300 px-3 py-2 rounded-md" href="#">Waterfalls</a>
+<a class="text-on-surface-variant hover:text-primary hover:bg-primary-container/10 transition-all duration-300 px-3 py-2 rounded-md" href="#">Heritage</a>
+<a class="text-on-surface-variant hover:text-primary hover:bg-primary-container/10 transition-all duration-300 px-3 py-2 rounded-md" href="#">Nature</a>
+<a class="text-on-surface-variant hover:text-primary hover:bg-primary-container/10 transition-all duration-300 px-3 py-2 rounded-md" href="#">Stay</a>
+</div>
+<div class="flex items-center space-x-stack_md">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2">
+<span class="material-symbols-outlined">search</span>
+</button>
+<a class="hidden md:inline-flex btn-primary px-6 py-2 rounded-lg font-label-caps active:scale-95 duration-200" href="#">
+                    Join Community
+                </a>
+</div>
+</div>
+</nav>
+<main>
+<!-- Hero Section -->
+<section class="relative w-full h-[716px] min-h-[600px] flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="Hero Background" class="w-full h-full object-cover object-center filter brightness-[0.85]" data-alt="A sweeping, majestic view of an ancient Indian temple complex at golden hour. The warm, angled sunlight casts long shadows and highlights the intricate stone carvings of the towering gopurams (gateway towers). The sky is a gradient of soft peach to deep twilight blue. The scene embodies heritage, tranquility, and the rich cultural history of South India, maintaining an elegant, premium aesthetic suitable for a luxury travel brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjJBx9tJWPQP7jdMK8_KF4pccMuIzDWDjM_SsNCpDW6vK2yIrJQ8o79LHaf-NNV-onJK_AkE6iw-ykGfYs__sQh_dKkX19vJWBCpzqv9mh1jZuZl_XYy5a6bYdKYqpwjZyhXeM1-RpBC0iW2Zck0ZyQfzirXHABI-HGhAfHYHWCuShb6kRw0tAEabjmt_-XvGUeuBJo-dv9jnKuqj7iXmsAL_8AJubu0DhChhNHKqxThtRBiy9q4iRPVGEm1ERfEoO5OOburqkEv4"/>
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-surface/90"></div>
+</div>
+<div class="relative z-10 text-center px-margin_mobile md:px-section_padding max-w-4xl mx-auto mt-20">
+<span class="font-label-caps text-label-caps text-primary-fixed-dim uppercase tracking-widest block mb-stack_md">Our Story</span>
+<h1 class="font-display-lg text-headline-lg-mobile md:text-display-lg text-on-primary mb-stack_lg drop-shadow-md">
+                    Discovering Villupuram,<br/>One Place at a Time
+                </h1>
+<p class="font-body-lg text-body-lg text-surface-container-highest max-w-2xl mx-auto drop-shadow-sm">
+                    We are dedicated to unearthing the hidden gems, celebrating the rich heritage, and curating unparalleled experiences in the heart of Tamil Nadu.
+                </p>
+</div>
+</section>
+<!-- Mission Section -->
+<section class="py-section_padding px-margin_mobile md:px-section_padding bg-surface-container-lowest">
+<div class="max-w-3xl mx-auto text-center">
+<h2 class="font-headline-lg text-headline-md md:text-headline-lg text-primary mb-stack_lg">Our Mission</h2>
+<div class="w-16 h-1 bg-secondary mx-auto mb-stack_lg rounded-full"></div>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                    To elevate the narrative of Villupuram from a mere transit hub to a premier destination of cultural depth, natural beauty, and historical significance. We strive to provide the discerning traveler with an authentic, meticulously crafted journey through a landscape steeped in antiquity and vibrant life, fostering a profound connection between the visitor and the soul of the region.
+                </p>
+</div>
+</section>
+<!-- Values Bento Grid -->
+<section class="py-section_padding px-margin_mobile md:px-section_padding bg-surface">
+<div class="max-w-container_max_width mx-auto">
+<div class="text-center mb-section_padding">
+<h2 class="font-headline-lg text-headline-md md:text-headline-lg text-primary mb-stack_md">Core Values</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">The principles that guide our curation and community building.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Value 1 -->
+<div class="glass-panel p-stack_lg rounded-xl flex flex-col items-start hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center mb-stack_md text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+<h3 class="font-headline-md text-[24px] text-on-surface mb-stack_sm">Community-Driven</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Built by and for those who hold a deep appreciation for local heritage and shared stories.</p>
+</div>
+<!-- Value 2 -->
+<div class="glass-panel p-stack_lg rounded-xl flex flex-col items-start hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-full bg-secondary-container/20 flex items-center justify-center mb-stack_md text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<h3 class="font-headline-md text-[24px] text-on-surface mb-stack_sm">Verified &amp; Trusted</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Every experience and location is rigorously vetted to ensure an uncompromising standard of quality.</p>
+</div>
+<!-- Value 3 -->
+<div class="glass-panel p-stack_lg rounded-xl flex flex-col items-start hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-full bg-tertiary-container/20 flex items-center justify-center mb-stack_md text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+</div>
+<h3 class="font-headline-md text-[24px] text-on-surface mb-stack_sm">Rich Media</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Showcasing the region through breathtaking, high-fidelity visual storytelling that captures its true essence.</p>
+</div>
+<!-- Value 4 -->
+<div class="glass-panel p-stack_lg rounded-xl flex flex-col items-start hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 flex items-center justify-center mb-stack_md text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+</div>
+<h3 class="font-headline-md text-[24px] text-on-surface mb-stack_sm">Growth &amp; Discovery</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Continuously expanding our horizons to bring you the most compelling, undiscovered narratives.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-section_padding px-margin_mobile md:px-section_padding bg-surface-container-low border-t border-outline-variant/30">
+<div class="max-w-4xl mx-auto text-center glass-panel p-section_padding rounded-xl relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-tertiary"></div>
+<h2 class="font-display-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-stack_md">Shape the Narrative</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-stack_lg max-w-2xl mx-auto">
+                    Are you a passionate storyteller, photographer, or local expert? Help us curate the definitive guide to Villupuram's elegance.
+                </p>
+<a class="inline-flex btn-primary px-8 py-4 rounded-lg font-label-caps text-label-caps tracking-widest uppercase shadow-lg shadow-primary/20 active:scale-95 duration-200" href="#">
+                    Join Us as a Contributor
+                </a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-container-high w-full rounded-t-lg bg-surface-container-low border-t border-outline-variant mt-section_padding">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack_lg px-margin_mobile md:px-section_padding py-section_padding max-w-container_max_width mx-auto">
+<div>
+<span class="font-headline-md text-headline-md text-secondary dark:text-secondary-fixed block mb-stack_md">Villupuram Elite</span>
+<p class="font-body-md text-body-md text-on-surface dark:text-on-surface-variant max-w-sm">
+                    Curated for the Discerning Traveler.
+                </p>
+</div>
+<div class="flex flex-col md:items-end space-y-stack_sm">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors opacity-80 hover:opacity-100 font-semibold text-primary" href="#">About Us</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Contact</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Local Guide Program</a>
+</div>
+</div>
+<div class="px-margin_mobile md:px-section_padding pb-stack_lg text-center md:text-left">
+<p class="font-body-md text-[14px] text-on-surface-variant/70">
+                © 2024 Villupuram Discovery Platform. Curated for the Discerning Traveler.
+            </p>
+</div>
+</footer>
+</body></html>
