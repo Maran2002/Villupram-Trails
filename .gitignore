@@ -59,3 +59,5 @@ secrets.json
 # OS files
 .DS_Store
 Thumbs.db
+site_audit.md.resolved
+site_audit.md.resolved

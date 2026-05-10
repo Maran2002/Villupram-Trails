@@ -3,7 +3,7 @@ import { Card } from '@/components/common/Card'
 export function StatsCard({ label, value, icon }) {
   return (
     <Card className="flex items-center p-6 space-x-4">
-      <div className="p-3 bg-primary-100 text-primary-600 rounded-lg text-2xl">
+      <div className="p-3 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg text-2xl">
         {icon}
       </div>
       <div>

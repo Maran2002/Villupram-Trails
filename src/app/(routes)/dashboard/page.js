@@ -24,8 +24,8 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-serif font-bold mb-2">
+        <div className="max-w-7xl mx-auto mt-8">
+          <h1 className="text-4xl font-serif font-bold mb-2 text-neutral-900 dark:text-white">
             Welcome, {user?.username || 'Traveler'}! 👋
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400">

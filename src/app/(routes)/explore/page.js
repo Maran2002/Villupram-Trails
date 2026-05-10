@@ -28,13 +28,13 @@ export default function ExplorePage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-dark-950 pb-24">
+    <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 pb-24">
       {/* Premium Hero Section */}
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden border-b border-neutral-200/60 dark:border-dark-800/60">
         <div className="absolute inset-0 bg-white dark:bg-dark-900 z-0">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-100 dark:bg-primary-900/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 animate-blob"></div>
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-secondary-100 dark:bg-secondary-900/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-tertiary-100 dark:bg-tertiary-900/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+          <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-accent-100 dark:bg-accent-900/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto">
@@ -67,7 +67,7 @@ export default function ExplorePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search places, categories, or keywords..."
-                className="w-full h-16 pl-14 pr-32 rounded-2xl bg-white dark:bg-dark-800 border-2 border-transparent shadow-xl shadow-neutral-200/50 dark:shadow-dark-950/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-lg"
+                className="w-full h-16 pl-14 pr-32 rounded-2xl bg-white dark:bg-dark-800 border-2 border-transparent shadow-xl shadow-neutral-200/50 dark:shadow-dark-900/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-lg"
               />
               <button className="absolute right-2 top-2 bottom-2 bg-primary-500 hover:bg-primary-600 text-white px-6 rounded-xl font-medium transition-colors shadow-md">
                 Search

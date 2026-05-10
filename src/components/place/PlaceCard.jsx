@@ -45,7 +45,7 @@ export function PlaceCard({ place, index = 0 }) {
 
             {/* Save Button */}
             <button
-              className="absolute top-3 left-3 p-2 bg-white/90 dark:bg-dark-800/90 rounded-full hover:bg-white transition"
+              className="absolute top-3 left-3 p-2 bg-white/90 dark:bg-dark-800/90 rounded-full hover:bg-white dark:hover:bg-dark-700 transition"
               onClick={(e) => e.preventDefault()}
             >
               <Bookmark size={18} className="text-primary-500" />
@@ -82,9 +82,9 @@ export function PlaceCard({ place, index = 0 }) {
                     />
                   ))}
                 </div>
-                <span className="ml-1 font-semibold text-sm">{(place.rating || 0).toFixed(1)}</span>
+                <span className="ml-1 font-semibold text-sm text-neutral-900 dark:text-neutral-50">{(place.rating || 0).toFixed(1)}</span>
               </div>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
                 {place.reviewCount || 0} reviews
               </span>
             </div>

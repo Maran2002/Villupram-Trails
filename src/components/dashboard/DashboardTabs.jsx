@@ -23,7 +23,7 @@ export function DashboardTabs() {
           </button>
         ))}
       </div>
-      <div className="py-4">
+      <div className="py-4 text-neutral-700 dark:text-neutral-400">
         {activeTab === 'contributions' && <p>Your submitted places will appear here.</p>}
         {activeTab === 'reviews' && <p>Your reviews of places will appear here.</p>}
         {activeTab === 'drafts' && <p>Your incomplete drafts will appear here.</p>}

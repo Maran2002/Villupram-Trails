@@ -64,7 +64,7 @@ export default function GuidelinesPage() {
 
             <div>
               <h3 className="flex items-center gap-2 text-xl font-medium text-neutral-900 dark:text-white mb-3">
-                <Shield className="text-tertiary-500" size={20} /> Objective Descriptions
+                <Shield className="text-accent-500" size={20} /> Objective Descriptions
               </h3>
               <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
                 The main description of a place should be objective and informative. Save your personal opinions, ratings, and subjective experiences for the <strong>Reviews</strong> section. The directory listing should serve as an unbiased guide.

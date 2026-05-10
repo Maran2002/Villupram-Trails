@@ -38,7 +38,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative bg-white dark:bg-dark-950 pt-20 pb-10 border-t border-neutral-200 dark:border-dark-800 overflow-hidden">
+    <footer className="relative bg-white dark:bg-dark-900 pt-20 pb-10 border-t border-neutral-200 dark:border-dark-800 overflow-hidden">
       {/* Premium background styling */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"></div>
       
@@ -136,7 +136,7 @@ export function Footer() {
 
         <div className="h-px bg-neutral-200 dark:bg-dark-800 w-full mb-8"></div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500 dark:text-neutral-500 font-light">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400 font-light">
           <p>&copy; {new Date().getFullYear()} Villupuram Travel Community.</p>
           <p className="flex items-center gap-1.5">
             Made with <Heart size={14} className="text-red-500 fill-red-500" /> by 

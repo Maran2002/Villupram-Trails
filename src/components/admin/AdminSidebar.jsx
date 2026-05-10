@@ -13,7 +13,7 @@ export function AdminSidebar({ activeTab, setActiveTab }) {
   ]
 
   return (
-    <aside className="w-full lg:w-64 bg-white dark:bg-dark-900 border-r border-neutral-200 dark:border-dark-700 p-6 flex flex-col gap-2 rounded-xl lg:rounded-none lg:min-h-[calc(100vh-4rem)]">
+    <aside className="w-full lg:w-64 bg-white dark:bg-dark-800 border-r border-neutral-200 dark:border-dark-700 p-6 flex flex-col gap-2 rounded-xl lg:rounded-none lg:min-h-[calc(100vh-4rem)]">
       <h2 className="font-serif font-bold text-xl mb-6 text-neutral-900 dark:text-white px-2">Admin Panel</h2>
       <nav className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0">
         {navItems.map((item) => (

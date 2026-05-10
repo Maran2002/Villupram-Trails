@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/common/Button'
 
 export function Header() {
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -50,11 +50,11 @@ export function Header() {
           
           {/* Logo */}
           <Link href="/" className="group flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-500 to-secondary-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform duration-300">
+            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform duration-300">
               <MapPin size={22} strokeWidth={2.5} />
             </div>
-            <span className={`font-serif text-2xl font-bold transition-colors ${isScrolled ? 'text-neutral-900 dark:text-white' : 'text-white drop-shadow-md lg:text-neutral-900 lg:dark:text-white'}`}>
-              Villupuram <span className="text-primary-500 font-light italic">Hub</span>
+            <span className={`font-serif text-2xl font-bold transition-colors ${isScrolled ? 'text-primary-600 dark:text-primary-500' : 'text-primary-500 drop-shadow-md'}`}>
+              Villupuram <span className={`${isScrolled ? 'text-neutral-900 dark:text-white' : 'text-white'} font-light italic`}>Hub</span>
             </span>
           </Link>
 
@@ -69,7 +69,7 @@ export function Header() {
                   className={`relative font-medium text-sm transition-colors hover:text-primary-500 ${
                     isActive 
                       ? 'text-primary-500' 
-                      : isScrolled ? 'text-neutral-600 dark:text-neutral-300' : 'text-neutral-200 lg:text-neutral-600 lg:dark:text-neutral-300 drop-shadow-sm lg:drop-shadow-none'
+                      : isScrolled ? 'text-neutral-600 dark:text-neutral-300' : 'text-white/70 lg:dark:text-neutral-300 drop-shadow-sm lg:drop-shadow-none'
                   }`}
                 >
                   {link.name}
@@ -89,7 +89,7 @@ export function Header() {
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               className={`p-2.5 rounded-full transition-all duration-300 ${
                 isScrolled 
                   ? 'bg-neutral-100 hover:bg-neutral-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-neutral-700 dark:text-neutral-300' 
@@ -98,13 +98,13 @@ export function Header() {
               aria-label="Toggle theme"
             >
               {mounted ? (
-                theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />
+                resolvedTheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />
               ) : (
                 <div className="w-[18px] h-[18px]"></div>
               )}
             </button>
             <Link href="/auth/login">
-              <Button size="sm" variant="outline" className={`border-neutral-200 dark:border-dark-700 ${!isScrolled && 'border-white/30 text-white hover:bg-white/10 lg:border-neutral-200 lg:text-neutral-900 lg:dark:text-white'}`}>
+              <Button size="sm" variant="outline" className={ `${isScrolled ? 'border-primary-500 text-primary-500' : 'text-white'} `}>
                 Sign In
               </Button>
             </Link>
@@ -118,10 +118,10 @@ export function Header() {
           {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center gap-4">
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               className={`p-2 rounded-full ${isScrolled ? 'text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-dark-800' : 'text-white bg-white/20'}`}
             >
-              {mounted ? (theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />) : <div className="w-[18px] h-[18px]"></div>}
+              {mounted ? (resolvedTheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />) : <div className="w-[18px] h-[18px]"></div>}
             </button>
             <button 
               className={`p-2 -mr-2 ${isScrolled ? 'text-neutral-900 dark:text-white' : 'text-white'}`}

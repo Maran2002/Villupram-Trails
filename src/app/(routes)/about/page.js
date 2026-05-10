@@ -57,7 +57,7 @@ export default function AboutPage() {
             className="font-serif text-5xl md:text-7xl lg:text-8xl text-white mb-8 drop-shadow-2xl leading-[1.1] tracking-tight"
           >
             Discover Villupuram,<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-secondary-300 to-tertiary-400">One Place at a Time</span>
+            <span className="text-primary-300 italic">One Place at a Time</span>
           </motion.h1>
           
           <motion.p 
@@ -69,7 +69,7 @@ export default function AboutPage() {
           
           <motion.div variants={fadeUp}>
             <Link href="/explore">
-              <Button size="lg" className="shadow-lg shadow-primary-500/30 text-lg px-8 py-6 rounded-full hover:scale-105 transition-transform duration-300">
+              <Button size="sm" className="shadow-lg shadow-primary-500/30 text-lg px-4 py-3 rounded-full hover:scale-105 transition-transform duration-300">
                 Start Exploring
               </Button>
             </Link>
@@ -116,7 +116,7 @@ export default function AboutPage() {
       </section>
 
       {/* Values Bento Grid */}
-      <section className="py-24 px-4 md:px-8 bg-white dark:bg-dark-950 relative overflow-hidden">
+      <section className="py-24 px-4 md:px-8 bg-white dark:bg-dark-800 relative overflow-hidden">
         {/* Abstract shapes */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-500/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3"></div>
@@ -191,7 +191,7 @@ export default function AboutPage() {
               Are you a passionate storyteller, photographer, or local expert? Join our elite community and help curate the definitive guide to Villupuram's elegance.
             </p>
             <Link href="/auth/register?type=contributor">
-              <Button size="md" className="text-dark-900 cursor-pointer hover:bg-neutral-100 text-lg px-8 py-6 rounded-full group flex items-center gap-3 mx-auto">
+              <Button size="md" className="text-dark-900 cursor-pointer hover:bg-neutral-100 text-lg px-4 py-3 rounded-full group flex items-center gap-3 mx-auto">
                 Become a Contributor
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Button>
