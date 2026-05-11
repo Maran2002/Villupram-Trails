@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#f5f5f4"/>
+  <rect x="0" y="0" width="800" height="400" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e7e5e4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d6d3d1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="400" cy="170" r="50" fill="#a8a29e" opacity="0.4"/>
+  <path d="M400 130 C400 130 370 165 370 185 C370 201.6 383.4 215 400 215 C416.6 215 430 201.6 430 185 C430 165 400 130 400 130Z" fill="#78716c" opacity="0.5"/>
+  <circle cx="400" cy="183" r="10" fill="#f5f5f4" opacity="0.7"/>
+  <text x="400" y="260" font-family="Georgia, serif" font-size="18" fill="#78716c" text-anchor="middle" opacity="0.7">No image available</text>
+  <text x="400" y="285" font-family="Georgia, serif" font-size="13" fill="#a8a29e" text-anchor="middle" opacity="0.6">Villupuram Discovery Hub</text>
+</svg>

@@ -23,7 +23,10 @@ export function HeroSection() {
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60" />
+        {/* Soft top gradient — darkens area behind navbar */}
+        <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-black/70 via-black/20 to-transparent z-10 pointer-events-none" />
+        {/* Bottom gradient — existing */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/55" />
       </motion.div>
 
       {/* Content */}

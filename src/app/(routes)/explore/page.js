@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MapPin, Compass, SlidersHorizontal, Map as MapIcon, X } from 'lucide-react'
 import { PlaceGrid } from '@/components/place/PlaceGrid'
 import { PlaceFilter } from '@/components/place/PlaceFilter'
+import { useFilterStore } from '@/lib/store/filterStore'
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -24,8 +25,8 @@ const fadeUp = {
 }
 
 export default function ExplorePage() {
-  const [searchQuery, setSearchQuery] = useState('')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const { search, setSearch } = useFilterStore()
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 pb-24">
@@ -64,8 +65,8 @@ export default function ExplorePage() {
               </div>
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search places, categories, or keywords..."
                 className="w-full h-16 pl-14 pr-32 rounded-2xl bg-white dark:bg-dark-800 border-2 border-transparent shadow-xl shadow-neutral-200/50 dark:shadow-dark-900/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-lg"
               />

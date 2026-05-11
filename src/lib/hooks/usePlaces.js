@@ -2,12 +2,13 @@
 
 import { useFetch } from './useFetch'
 
-export function usePlaces(page = 1, limit = 12, category) {
+export function usePlaces(page = 1, limit = 12, category, search) {
   const queryObj = {
     page: page.toString(),
     limit: limit.toString(),
   }
   if (category) queryObj.category = category
+  if (search) queryObj.search = search
   const query = new URLSearchParams(queryObj)
 
   return useFetch(`/places?${query}`)

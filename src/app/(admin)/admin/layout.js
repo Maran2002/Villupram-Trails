@@ -7,14 +7,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, MapPin, CheckCircle,
   Flag, Settings, ChevronLeft, Menu, X,
-  Bell, Search, LogOut, Shield
+  Bell, Search, LogOut, Shield, Activity, MessageSquare
 } from 'lucide-react'
 
 const navItems = [
   { id: 'overview',      label: 'Overview',         href: '/admin',                icon: LayoutDashboard },
   { id: 'places',        label: 'Places',            href: '/admin/places',         icon: MapPin },
+  { id: 'reviews',       label: 'Reviews',           href: '/admin/reviews',        icon: MessageSquare },
   { id: 'contributors',  label: 'Contributors',      href: '/admin/contributors',   icon: Users },
   { id: 'approvals',     label: 'Pending Approvals', href: '/admin/approvals',      icon: CheckCircle },
+  { id: 'audit',         label: 'Audit Trail',       href: '/admin/audit',          icon: Activity },
   { id: 'reports',       label: 'Reports',           href: '/admin/reports',        icon: Flag },
   { id: 'settings',      label: 'Settings',          href: '/admin/settings',       icon: Settings },
 ]
