@@ -1,94 +1,282 @@
 'use client'
 
-import { useState } from 'react'
-import { Save, Info } from 'lucide-react'
-
-const settingSections = [
-  {
-    title: 'Platform Identity',
-    description: 'Basic platform name and branding configuration.',
-    fields: [
-      { id: 'platform_name', label: 'Platform Name', type: 'text', defaultValue: 'Villupuram Discovery Hub' },
-      { id: 'tagline', label: 'Tagline', type: 'text', defaultValue: 'Unearth Hidden Gems of Tamil Nadu' },
-    ]
-  },
-  {
-    title: 'Contribution Settings',
-    description: 'Control how community contributions are handled.',
-    fields: [
-      { id: 'require_approval', label: 'Require approval for new places', type: 'toggle', defaultValue: true },
-      { id: 'require_verification', label: 'Require account verification to contribute', type: 'toggle', defaultValue: true },
-      { id: 'min_review_length', label: 'Minimum review length (characters)', type: 'number', defaultValue: 50 },
-    ]
-  },
-  {
-    title: 'Points & Gamification',
-    description: 'Configure the points system for contributor rewards.',
-    fields: [
-      { id: 'points_place', label: 'Points for approved place', type: 'number', defaultValue: 100 },
-      { id: 'points_review', label: 'Points for approved review', type: 'number', defaultValue: 20 },
-      { id: 'points_photo', label: 'Points for photo upload', type: 'number', defaultValue: 10 },
-    ]
-  }
-]
+import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
+import { 
+  Globe, Mail, Phone, MapPin, 
+  Save, Loader2, Image as ImageIcon, Layout,
+  Shield, Megaphone, Info, Camera
+} from 'lucide-react'
+import { FaFacebook, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa'
+import toast from 'react-hot-toast'
+import { useAuthStore } from '@/lib/store'
+import { compressToBase64 } from '@/lib/imageUtils'
+import apiClient from '@/lib/api'
 
 export default function AdminSettingsPage() {
-  const [saved, setSaved] = useState(false)
+  const { token, logout } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    siteName: '',
+    siteLogo: '',
+    contactEmail: '',
+    contactPhone: '',
+    address: '',
+    socialLinks: {
+      facebook: '',
+      twitter: '',
+      instagram: '',
+      youtube: ''
+    },
+    seoDescription: ''
+  })
+  
+  const logoInputRef = useRef(null)
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      // Using axios apiClient which has the 401 interceptor
+      const { data } = await apiClient.get('/admin/settings')
+      if (data.success) {
+        setForm(data.data)
+      }
+    } catch (err) {
+      if (err.code === 401) return // Interceptor handles redirect
+      toast.error(err.message || 'Failed to load settings')
+    } finally {
+      setLoading(false)
+    }
   }
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const loadingToast = toast.loading('Processing logo...')
+    try {
+      const result = await compressToBase64(file, { maxWidth: 300, quality: 0.8 })
+      setForm(prev => ({ ...prev, siteLogo: result.dataUrl }))
+      toast.success('Logo ready!', { id: loadingToast })
+    } catch (err) {
+      toast.error('Failed to process image', { id: loadingToast })
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const { data } = await apiClient.put('/admin/settings', form)
+      if (data.success) {
+        toast.success('Site settings updated successfully!')
+      }
+    } catch (err) {
+      if (err.code === 401) return // Interceptor handles redirect
+      toast.error(err.message || 'Failed to update settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>
+
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12">
       <div>
-        <h2 className="text-2xl font-serif font-bold text-neutral-900 dark:text-white mb-1">Platform Settings</h2>
-        <p className="text-neutral-500 dark:text-neutral-400 text-sm">Configure global platform behaviour and community guidelines.</p>
+        <h1 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white mb-2">General Settings</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 text-sm">Configure global site information, contact details, and branding.</p>
       </div>
 
-      {settingSections.map((section) => (
-        <div key={section.title} className="bg-white dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 p-6 shadow-sm">
-          <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white mb-1">{section.title}</h3>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">{section.description}</p>
-          <div className="space-y-5">
-            {section.fields.map((field) => (
-              <div key={field.id} className="flex items-center justify-between gap-6">
-                <label htmlFor={field.id} className="text-sm font-medium text-neutral-700 dark:text-neutral-300 flex-1">
-                  {field.label}
-                </label>
-                {field.type === 'toggle' ? (
-                  <div className="w-11 h-6 bg-primary-500 rounded-full relative cursor-pointer shrink-0">
-                    <div className="w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow" />
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Col: Main Branding & Info */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Branding Card */}
+          <div className="bg-white dark:bg-dark-800 rounded-3xl border border-neutral-200 dark:border-dark-700 p-8 shadow-sm space-y-6">
+            <h3 className="font-bold text-neutral-900 dark:text-white flex items-center gap-2 border-b border-neutral-100 dark:border-dark-700 pb-4 mb-2">
+              <Layout size={18} className="text-primary-500" /> Site Branding
+            </h3>
+            
+            <div className="flex flex-col sm:flex-row gap-8 items-start">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Site Logo</label>
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-2xl bg-neutral-50 dark:bg-dark-900 border-2 border-dashed border-neutral-200 dark:border-dark-700 flex items-center justify-center overflow-hidden">
+                    {form.siteLogo ? (
+                      <img src={form.siteLogo} alt="Logo" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <ImageIcon size={32} className="text-neutral-300" />
+                    )}
                   </div>
-                ) : (
-                  <input
-                    id={field.id}
-                    type={field.type}
-                    defaultValue={field.defaultValue}
-                    className="w-52 px-3 py-2 text-sm bg-neutral-50 dark:bg-dark-700 border border-neutral-200 dark:border-dark-600 rounded-xl text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
-                  />
-                )}
+                  <button 
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="absolute -bottom-2 -right-2 p-2 bg-white dark:bg-dark-700 border border-neutral-200 dark:border-dark-600 rounded-lg shadow-md text-primary-500 hover:scale-110 transition-transform"
+                  >
+                    <Camera size={14} />
+                  </button>
+                  <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+                </div>
               </div>
-            ))}
+              
+              <div className="flex-1 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Site Name</label>
+                  <input 
+                    type="text" 
+                    value={form.siteName} 
+                    onChange={(e) => setForm(f => ({ ...f, siteName: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm font-medium"
+                    placeholder="e.g. Villupuram Hub"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">SEO Meta Description</label>
+                  <textarea 
+                    rows={2}
+                    value={form.seoDescription} 
+                    onChange={(e) => setForm(f => ({ ...f, seoDescription: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm resize-none"
+                    placeholder="Brief description for search engines..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Card */}
+          <div className="bg-white dark:bg-dark-800 rounded-3xl border border-neutral-200 dark:border-dark-700 p-8 shadow-sm space-y-6">
+            <h3 className="font-bold text-neutral-900 dark:text-white flex items-center gap-2 border-b border-neutral-100 dark:border-dark-700 pb-4 mb-2">
+              <Mail size={18} className="text-primary-500" /> Contact Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                  <Mail size={12} /> Contact Email
+                </label>
+                <input 
+                  type="email" 
+                  value={form.contactEmail} 
+                  onChange={(e) => setForm(f => ({ ...f, contactEmail: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm"
+                  placeholder="admin@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                  <Phone size={12} /> Contact Phone
+                </label>
+                <input 
+                  type="text" 
+                  value={form.contactPhone} 
+                  onChange={(e) => setForm(f => ({ ...f, contactPhone: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm"
+                  placeholder="+91 00000 00000"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                <MapPin size={12} /> Office Address
+              </label>
+              <textarea 
+                rows={2}
+                value={form.address} 
+                onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))}
+                className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm resize-none"
+                placeholder="Physical address..."
+              />
+            </div>
           </div>
         </div>
-      ))}
 
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleSave}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
-        >
-          <Save size={16} />
-          {saved ? 'Saved!' : 'Save Changes'}
-        </button>
-        {saved && (
-          <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
-            <Info size={14} /> Settings saved successfully.
-          </p>
-        )}
-      </div>
+        {/* Right Col: Social & Actions */}
+        <div className="space-y-8">
+          
+          {/* Social Links Card */}
+          <div className="bg-white dark:bg-dark-800 rounded-3xl border border-neutral-200 dark:border-dark-700 p-8 shadow-sm space-y-6">
+            <h3 className="font-bold text-neutral-900 dark:text-white flex items-center gap-2 border-b border-neutral-100 dark:border-dark-700 pb-4 mb-2">
+              <Globe size={18} className="text-primary-500" /> Social Presence
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <FaFacebook size={12} /> Facebook
+                </div>
+                <input 
+                  type="text" 
+                  value={form.socialLinks.facebook} 
+                  onChange={(e) => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, facebook: e.target.value } }))}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 text-xs focus:outline-none focus:border-primary-500"
+                  placeholder="URL..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <FaTwitter size={12} /> Twitter (X)
+                </div>
+                <input 
+                  type="text" 
+                  value={form.socialLinks.twitter} 
+                  onChange={(e) => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, twitter: e.target.value } }))}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 text-xs focus:outline-none focus:border-primary-500"
+                  placeholder="URL..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <FaInstagram size={12} /> Instagram
+                </div>
+                <input 
+                  type="text" 
+                  value={form.socialLinks.instagram} 
+                  onChange={(e) => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, instagram: e.target.value } }))}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 text-xs focus:outline-none focus:border-primary-500"
+                  placeholder="URL..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <FaYoutube size={12} /> YouTube
+                </div>
+                <input 
+                  type="text" 
+                  value={form.socialLinks.youtube} 
+                  onChange={(e) => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, youtube: e.target.value } }))}
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 text-xs focus:outline-none focus:border-primary-500"
+                  placeholder="URL..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <button 
+              type="submit" 
+              disabled={saving}
+              className="w-full py-4 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-bold rounded-2xl transition-all shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              {saving ? 'Saving...' : 'Save Site Settings'}
+            </button>
+            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 p-4 rounded-2xl">
+              <div className="flex gap-3 text-amber-600 dark:text-amber-400">
+                <Info size={16} className="shrink-0 mt-0.5" />
+                <p className="text-[11px] leading-relaxed">
+                  Changes made here are applied globally. Ensure your contact details are verified as they appear in the site footer and about page.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
     </div>
   )
 }

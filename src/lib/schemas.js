@@ -210,3 +210,21 @@ export function buildUserDoc({ email, username, hashedPassword }) {
 
   return { doc, errors }
 }
+
+/* ─── Visitor Log schema ────────────────────────────────────── */
+
+export function buildVisitorLog(data) {
+  return {
+    path: str(data.path, '/'),
+    userAgent: str(data.userAgent, 'unknown'),
+    ip: str(data.ip, 'unknown'),
+    referer: str(data.referer, ''),
+    device: str(data.device, 'desktop'),
+    browser: str(data.browser, 'unknown'),
+    os: str(data.os, 'unknown'),
+    screenSize: str(data.screenSize, 'unknown'),
+    timestamp: new Date(),
+  }
+}
+
+// End of schemas.js

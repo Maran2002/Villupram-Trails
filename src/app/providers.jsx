@@ -1,7 +1,19 @@
 'use client'
 
+import { useEffect } from 'react'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'react-hot-toast'
+import { useSettingsStore } from '@/lib/store'
+
+function SettingsInitializer({ children }) {
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings)
+
+  useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
+
+  return children
+}
 
 export function Providers({ children }) {
   return (
@@ -11,7 +23,9 @@ export function Providers({ children }) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      {children}
+      <SettingsInitializer>
+        {children}
+      </SettingsInitializer>
       <Toaster
         position="top-right"
         toastOptions={{

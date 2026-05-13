@@ -1,16 +1,40 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Users, Star, Eye } from 'lucide-react'
 
-const stats = [
-  { label: 'Places Catalogued', value: '120+', icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-  { label: 'Community Members', value: '1.2K+', icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
-  { label: 'Reviews Written', value: '500+', icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
-  { label: 'Monthly Visitors', value: '8K+', icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
+const FALLBACK_STATS = [
+  { id: 'places', label: 'Places Catalogued', value: '120+', icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+  { id: 'users', label: 'Community Members', value: '1.2K+', icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
+  { id: 'reviews', label: 'Reviews Written', value: '500+', icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+  { id: 'visitors', label: 'Monthly Visitors', value: '8K+', icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
 ]
 
 export function CommunityStats() {
+  const [stats, setStats] = useState(FALLBACK_STATS)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats/public')
+        const json = await res.json()
+        if (json.success) {
+          const { totalPlaces, totalUsers, totalReviews, monthlyVisitors } = json.data
+          setStats([
+            { id: 'places', label: 'Places Catalogued', value: formatValue(totalPlaces, '120+'), icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+            { id: 'users', label: 'Community Members', value: formatValue(totalUsers, '1.2K+'), icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
+            { id: 'reviews', label: 'Reviews Written', value: formatValue(totalReviews, '500+'), icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+            { id: 'visitors', label: 'Monthly Visitors', value: formatValue(monthlyVisitors, '8K+'), icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
+          ])
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats', err)
+      }
+    }
+    fetchStats()
+  }, [])
+
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-dark-900 relative overflow-hidden">
       {/* Subtle decorative background */}
@@ -39,7 +63,7 @@ export function CommunityStats() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
             <motion.div
-              key={stat.label}
+              key={stat.id}
               className="bg-neutral-50 dark:bg-dark-800 rounded-2xl p-8 border border-neutral-200 dark:border-dark-700 text-center group hover:shadow-lg transition-all duration-300"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -57,4 +81,10 @@ export function CommunityStats() {
       </div>
     </section>
   )
+}
+
+function formatValue(val, fallback) {
+  if (val === undefined || val === null || val === 0) return fallback
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'K+'
+  return val + '+'
 }

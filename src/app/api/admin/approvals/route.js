@@ -10,16 +10,28 @@ export async function GET(request) {
     if (user.role !== 'admin') return forbidden()
 
     const db = await getDb()
-    const pendingPlaces = await db.collection('places').find({ status: 'Pending' }).toArray()
+    // Fetch places that are Pending OR have a pendingUpdate
+    const pendingPlaces = await db.collection('places').find({
+      $or: [
+        { status: 'Pending' },
+        { pendingUpdate: { $exists: true } }
+      ]
+    }).toArray()
+    
     const hiddenReviews = await db.collection('reviews').find({ visible: false }).toArray()
 
     const items = [
-      ...pendingPlaces.map(p => ({ ...p, type: 'Place' })),
+      ...pendingPlaces.map(p => ({ 
+        ...p, 
+        type: 'Place', 
+        isUpdate: p.status === 'Approved' && !!p.pendingUpdate 
+      })),
       ...hiddenReviews.map(r => ({ ...r, type: 'Review' })),
     ]
 
     return NextResponse.json({ success: true, data: items })
-  } catch {
+  } catch (error) {
+    console.error('Fetch approvals error:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch approvals' }, { status: 500 })
   }
 }
@@ -35,12 +47,36 @@ export async function PUT(request) {
 
     let result
     if (type === 'Place') {
-      const newStatus = action === 'approve' ? 'Approved' : 'Rejected'
-      result = await db.collection('places').findOneAndUpdate(
-        { _id: new ObjectId(itemId) },
-        { $set: { status: newStatus, updatedAt: new Date() } },
-        { returnDocument: 'after' }
-      )
+      const place = await db.collection('places').findOne({ _id: new ObjectId(itemId) })
+      if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
+
+      if (place.pendingUpdate && action === 'approve') {
+        // Approve an update to an existing record
+        const { requestedAt, ...updateData } = place.pendingUpdate
+        result = await db.collection('places').findOneAndUpdate(
+          { _id: new ObjectId(itemId) },
+          { 
+            $set: { ...updateData, updatedAt: new Date() },
+            $unset: { pendingUpdate: "" }
+          },
+          { returnDocument: 'after' }
+        )
+      } else if (place.pendingUpdate && action === 'reject') {
+        // Reject an update (keep current approved version, just clear the request)
+        result = await db.collection('places').findOneAndUpdate(
+          { _id: new ObjectId(itemId) },
+          { $unset: { pendingUpdate: "" } },
+          { returnDocument: 'after' }
+        )
+      } else {
+        // Standard Pending -> Approved/Rejected flow
+        const newStatus = action === 'approve' ? 'Approved' : 'Rejected'
+        result = await db.collection('places').findOneAndUpdate(
+          { _id: new ObjectId(itemId) },
+          { $set: { status: newStatus, updatedAt: new Date() } },
+          { returnDocument: 'after' }
+        )
+      }
     } else {
       // Review visibility toggle
       const visible = action === 'approve'
@@ -58,7 +94,8 @@ export async function PUT(request) {
     })
 
     return NextResponse.json({ success: true, data: result })
-  } catch {
+  } catch (error) {
+    console.error('Process approval error:', error)
     return NextResponse.json({ success: false, error: 'Failed to process action' }, { status: 500 })
   }
 }

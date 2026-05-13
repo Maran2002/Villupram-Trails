@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import {
   MapPin, ChevronDown, CloudUpload, X, Clock, DollarSign,
-  Check, Landmark, FileText, Image as ImageIcon, Save, Send, AlertCircle, RefreshCw
+  Check, Landmark, FileText, Image as ImageIcon, Save, Send, AlertCircle, RefreshCw, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
@@ -259,11 +260,12 @@ function TextField({ label, required, value, onChange, placeholder, type = 'text
 export default function ContributePage() {
   const router = useRouter()
   const fileRef = useRef(null)
-  const token = useAuthStore((s) => s.token)
+  const { user, token } = useAuthStore()
   const [submitting, setSaving] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [imageData, setImageData] = useState([])  // [{ dataUrl, sizeKB, name }]
   const [compressing, setCompressing] = useState(false)
+  const [editId, setEditId] = useState(null)
 
   const [form, setForm] = useState({
     name: '', category: '', subCategory: '', description: '',
@@ -271,6 +273,37 @@ export default function ContributePage() {
     visitingHours: { startTime: '', endTime: '', days: [] },
     entryFee: '', amenities: [],
   })
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('edit')
+    if (id) {
+      setEditId(id)
+      fetch(`/api/places/${id}`)
+        .then(res => res.json())
+        .then(json => {
+          if (json.success) {
+            const p = json.data
+            setForm({
+              name: p.name || '',
+              category: p.category || '',
+              subCategory: p.subCategory || '',
+              description: p.description || '',
+              latitude: p.location?.lat?.toString() || '',
+              longitude: p.location?.lng?.toString() || '',
+              address: p.location?.address || '',
+              visitingHours: p.visitingHoursMeta || { startTime: '', endTime: '', days: [] },
+              entryFee: p.entryFee || '',
+              amenities: p.amenities || [],
+            })
+            if (p.images?.length) {
+              setImageData(p.images.map(url => ({ dataUrl: url, sizeKB: 0, name: 'Existing Image' })))
+            }
+          }
+        })
+        .catch(() => toast.error('Failed to load place data'))
+    }
+  }, [])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
 
@@ -349,8 +382,12 @@ export default function ContributePage() {
         images: imageData.map(img => img.dataUrl),
         status: isDraft ? 'Draft' : 'Pending',
       }
-      const res = await fetch('/api/places', {
-        method: 'POST',
+
+      const url = editId ? `/api/places/${editId}` : '/api/places'
+      const method = editId ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           ...(t ? { Authorization: `Bearer ${t}` } : {}),
@@ -359,8 +396,14 @@ export default function ContributePage() {
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || 'Submission failed')
-      toast.success(isDraft ? 'Draft saved!' : 'Submitted for review! Thank you.')
-      if (!isDraft) router.push('/explore')
+      
+      if (editId) {
+        toast.success('Update submitted for review!')
+        router.push(user?.role === 'admin' ? '/admin' : '/dashboard')
+      } else {
+        toast.success(isDraft ? 'Draft saved!' : 'Submitted for review! Thank you.')
+        if (!isDraft) router.push('/explore')
+      }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
     } finally { setSaving(false) }
@@ -370,13 +413,30 @@ export default function ContributePage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 pb-28">
 
       {/* Hero header */}
-      <section className="pt-28 pb-10 px-4 text-center border-b border-neutral-200/60 dark:border-dark-800/60 bg-white dark:bg-dark-900">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+      <section className="pt-20 pb-10 px-4 relative border-b border-neutral-200/60 dark:border-dark-800/60 bg-white dark:bg-dark-900">
+        <div className="absolute top-8 left-8 hidden sm:block">
+           <Link 
+            href={user?.role === 'admin' ? '/admin' : '/dashboard'} 
+            className="flex items-center gap-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors group"
+           >
+              <div className="w-10 h-10 rounded-full bg-neutral-50 dark:bg-dark-800 flex items-center justify-center border border-neutral-200 dark:border-dark-700 group-hover:border-primary-500/50">
+                <ArrowLeft size={20} />
+              </div>
+              <span className="text-sm font-medium">
+                {user?.role === 'admin' ? 'Back to Admin Panel' : 'Back to Dashboard'}
+              </span>
+           </Link>
+        </div>
+
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="text-center">
           <h1 className="text-3xl sm:text-4xl font-serif font-bold text-neutral-900 dark:text-white mb-3">
-            Contribute a Landmark
+            {editId ? 'Edit Landmark' : 'Contribute a Landmark'}
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm max-w-lg mx-auto leading-relaxed">
-            Help preserve and share the heritage of Villupuram by submitting detailed information, accurate locations, and high-quality photographs.
+            {editId 
+              ? 'Your updates will be reviewed by our moderation team before being published.'
+              : 'Help preserve and share the heritage of Villupuram by submitting detailed information, accurate locations, and high-quality photographs.'
+            }
           </p>
         </motion.div>
       </section>
@@ -547,14 +607,16 @@ export default function ContributePage() {
         {/* Action buttons */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}
           className="flex gap-3 justify-end pt-2">
-          <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2.5 border-2 border-neutral-300 dark:border-dark-600 text-neutral-700 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 text-sm font-semibold rounded-xl transition-colors">
-            <Save size={15} /> Save as Draft
-          </button>
+          {!editId && (
+            <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={submitting}
+              className="flex items-center gap-2 px-6 py-2.5 border-2 border-neutral-300 dark:border-dark-600 text-neutral-700 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 text-sm font-semibold rounded-xl transition-colors">
+              <Save size={15} /> Save as Draft
+            </button>
+          )}
           <button type="submit" disabled={submitting}
             className="flex items-center gap-2 px-6 py-2.5 bg-secondary-500 hover:bg-secondary-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors shadow-md">
             <Send size={15} />
-            {submitting ? 'Submitting…' : 'Submit for Review'}
+            {submitting ? 'Submitting…' : (editId ? 'Submit Update' : 'Submit for Review')}
           </button>
         </motion.div>
       </form>

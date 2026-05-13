@@ -55,24 +55,40 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 422 })
     }
 
-    // Non-admin edits go back to Pending for re-approval
-    if (!isAdmin) patch.status = 'Pending'
+    let update = {}
+    let action = isAdmin ? 'place.admin_edit' : 'place.edit'
+
+    if (isAdmin) {
+      // Admins can overwrite everything directly
+      update = { $set: patch, $unset: { pendingUpdate: "" } }
+    } else {
+      if (place.status === 'Approved') {
+        // If Approved, store as pending update to keep live version unchanged
+        update = { $set: { pendingUpdate: { ...patch, requestedAt: new Date() } } }
+        action = 'place.update_request'
+      } else {
+        // If not Approved yet, just overwrite and keep/set status to Pending
+        patch.status = 'Pending'
+        update = { $set: patch }
+      }
+    }
 
     const result = await db.collection('places').findOneAndUpdate(
       { _id: new ObjectId(placeId) },
-      { $set: patch },
+      update,
       { returnDocument: 'after' }
     )
 
     await writeAudit({
       userId: user._id, username: user.username, role: user.role,
-      action: isAdmin ? 'place.admin_edit' : 'place.edit',
+      action: action,
       target: 'place', targetId: placeId,
-      meta: { name: place.name, newStatus: patch.status || place.status },
+      meta: { name: place.name },
     })
 
     return NextResponse.json({ success: true, data: result })
-  } catch {
+  } catch (error) {
+    console.error('Update error:', error)
     return NextResponse.json({ success: false, error: 'Failed to update place' }, { status: 500 })
   }
 }

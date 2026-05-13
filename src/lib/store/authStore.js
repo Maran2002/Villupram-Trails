@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import apiClient from '@/lib/api'
+import { encryptedStorage } from './storage'
 
 export const useAuthStore = create()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isLoading: false,
@@ -13,11 +14,14 @@ export const useAuthStore = create()(
         set({ isLoading: true })
         try {
           const { data } = await apiClient.post('/auth/login', { email, password })
-          set({
-            token: data.data?.token,
-            user: data.data?.user,
-          })
-          localStorage.setItem('auth_token', data.data?.token)
+          const token = data.data?.token
+          const user = data.data?.user
+          
+          set({ token, user })
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auth_token', token)
+          }
+          return data
         } finally {
           set({ isLoading: false })
         }
@@ -31,11 +35,14 @@ export const useAuthStore = create()(
             password,
             username,
           })
-          set({
-            token: data.data?.token,
-            user: data.data?.user,
-          })
-          localStorage.setItem('auth_token', data.data?.token)
+          const token = data.data?.token
+          const user = data.data?.user
+          
+          set({ token, user })
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auth_token', token)
+          }
+          return data
         } finally {
           set({ isLoading: false })
         }
@@ -43,7 +50,7 @@ export const useAuthStore = create()(
 
       logout: async () => {
         try {
-          const token = localStorage.getItem('auth_token')
+          const token = get().token || localStorage.getItem('auth_token')
           if (token) {
             await fetch('/api/auth/logout', {
               method: 'POST',
@@ -51,14 +58,19 @@ export const useAuthStore = create()(
             })
           }
         } catch {}
+        
         set({ user: null, token: null })
-        localStorage.removeItem('auth_token')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth-store') // Explicit clear
+        }
       },
 
       setUser: (user) => set({ user }),
     }),
     {
       name: 'auth-store',
+      storage: createJSONStorage(() => encryptedStorage),
     }
   )
 )

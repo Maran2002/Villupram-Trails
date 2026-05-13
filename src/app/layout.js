@@ -1,4 +1,5 @@
 import { Providers } from './providers'
+import VisitorTracker from '@/components/common/VisitorTracker'
 import './globals.css'
 
 export const metadata = {
@@ -11,6 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
+          <VisitorTracker />
           {children}
         </Providers>
       </body>

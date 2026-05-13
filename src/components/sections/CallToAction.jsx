@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import { MapPin, PenLine, Shield } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
 
 const steps = [
   {
@@ -33,6 +34,14 @@ const steps = [
 ];
 
 export function CallToAction() {
+  const { user } = useAuthStore();
+
+  const ctaLink = !user 
+    ? '/auth/register' 
+    : user.role === 'admin' 
+      ? '/admin' 
+      : '/dashboard';
+
   return (
     <>
       {/* How It Works Section */}
@@ -124,13 +133,13 @@ export function CallToAction() {
                 Start Exploring
               </Button>
             </Link>
-            <Link href="/auth/register">
+            <Link href={ctaLink}>
               <Button
                 variant="outline"
                 size="md"
                 className="border-white/30 text-white hover:bg-white/10 px-4 py-3 rounded-full shadow-xl"
               >
-                Create Free Account
+                {user ? 'Go to Dashboard' : 'Create Free Account'}
               </Button>
             </Link>
           </div>

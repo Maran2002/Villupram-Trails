@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -12,10 +12,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [stats, setStats] = useState({ places: '120+', members: '1.2K', visitors: '8K' })
   const { login, isLoading } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
   const from = searchParams.get('from') || '/dashboard'
+
+  useEffect(() => {
+    fetch('/api/stats/public')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) {
+          const { totalPlaces, totalUsers, monthlyVisitors } = json.data
+          setStats({
+            places: totalPlaces > 0 ? `${totalPlaces}+` : '120+',
+            members: totalUsers >= 1000 ? `${(totalUsers/1000).toFixed(1)}K` : `${totalUsers}`,
+            visitors: monthlyVisitors >= 1000 ? `${(monthlyVisitors/1000).toFixed(1)}K` : `${monthlyVisitors}`
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -55,7 +72,11 @@ export default function LoginPage() {
             Join our community of explorers, historians, and travellers preserving the hidden gems of Tamil Nadu.
           </p>
           <div className="mt-10 grid grid-cols-3 gap-4">
-            {[['342+', 'Places'], ['1.2K', 'Members'], ['4.8★', 'Rated']].map(([v, l]) => (
+            {[
+              [stats.places, 'Places'], 
+              [stats.members, 'Members'], 
+              [stats.visitors, 'Visitors']
+            ].map(([v, l]) => (
               <div key={l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
                 <p className="font-serif font-bold text-2xl">{v}</p>
                 <p className="text-white/60 text-xs mt-1">{l}</p>

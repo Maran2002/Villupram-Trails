@@ -5,8 +5,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/common/Button'
 import HeroImg from '@/app/assets/hero/bg-hero.jpg'
+import { useAuthStore } from '@/lib/store'
 
 export function HeroSection() {
+  const { user } = useAuthStore()
+  
+  const communityLink = !user 
+    ? '/auth/register' 
+    : user.role === 'admin' 
+      ? '/admin' 
+      : '/dashboard'
+
   return (
     <div className="relative h-screen overflow-hidden bg-gradient-to-b from-neutral-900 to-neutral-800">
       {/* Background Image */}
@@ -68,9 +77,9 @@ export function HeroSection() {
           <Link href="/explore">
             <Button size="lg" className="shadow-xl shadow-primary-900/40 px-8">Explore Places</Button>
           </Link>
-          <Link href="/auth/register">
+          <Link href={communityLink}>
             <Button variant="outline" size="lg" className="border-white/40 text-white hover:bg-white/10 px-8">
-              Join Community
+              {user ? 'My Dashboard' : 'Join Community'}
             </Button>
           </Link>
         </motion.div>
