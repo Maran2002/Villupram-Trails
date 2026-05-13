@@ -8,6 +8,26 @@ Villupuram Discovery Hub is a community-driven platform for travelers to explore
 
 This project is **open-sourced and open to contributions!** We welcome developers, designers, and local experts to help us build the most comprehensive travel and heritage directory for Villupuram.
 
+## Key Features (Latest Updates - May 13, 2026)
+
+### 🛡️ Security & Session Management
+- **AES-256 Encryption**: Integrated CryptoJS into local storage persistence, ensuring all sensitive user data is encrypted at rest on the client side.
+- **Automated Session Recovery**: Global API interceptors detect token expiry (401 errors) and automatically synchronize the UI state by forcing a secure logout and redirect.
+
+### 🚩 Community Integrity (Reporting System)
+- **Content Flagging**: Comprehensive reporting system allowing users and guests to flag inappropriate reviews, incorrect place data, or user misconduct.
+- **Admin Moderation Hub**: A dedicated dashboard for moderators to review, track, and resolve community reports with official resolution messaging.
+- **Transparency Tracking**: Users can monitor the status of their reports (Pending, Open, Resolved) and see detailed moderator actions from their dashboard.
+
+### 📈 Analytics & Administration
+- **Visitor Insights**: Real-time visitor tracking and logging system providing admins with traffic analytics and session data.
+- **Global Admin Search**: Intelligent, fuzzy search integrated into the admin panel for deep-linking across Users, Places, Reviews, and Sidebar navigation.
+- **Site Configuration**: Centralized management for site identity, social links, contact information, and SEO metadata.
+
+### 🏗️ Architectural Refinements
+- **Layout Groups**: Modern Next.js organization using route groups (`(admin)`, `(dashboard)`, `(auth)`, `(routes)`) for distinct layout management.
+- **Centralized API Client**: Unified Axios-based client for consistent authentication header injection and global error handling.
+
 ## User Story & Features
 
 When a user visits the platform, they can explore detailed listings of various destinations. This includes:
@@ -30,7 +50,7 @@ This project is built using a modern, scalable JavaScript stack optimized for se
 - **Frontend:** Next.js (App Router), React, Tailwind CSS, Framer Motion
 - **Backend:** Next.js API Route Handlers, Node.js
 - **Database:** MongoDB (Native Driver for optimal serverless connection pooling)
-- **Authentication:** Custom JWT (JSON Web Tokens) with Bcrypt password hashing
+- **Security:** AES-256 Encryption (CryptoJS), JWT Authentication, Bcrypt hashing
 - **Icons:** Lucide React
 - **Hosting/Deployment:** Ready for Vercel
 
@@ -53,6 +73,7 @@ You will need a MongoDB instance (local or Atlas) to run the application.
 4. Seed the database with initial admin users and placeholder places:
    ```bash
    node scripts/seed.js
+   node scripts/seed_logs.js # Optional: for analytics testing
    ```
 5. Run the development server:
    ```bash
