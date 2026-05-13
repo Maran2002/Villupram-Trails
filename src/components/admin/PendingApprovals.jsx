@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, X, Eye, MapPin, MessageSquare, RefreshCw, ExternalLink, Info, ChevronDown, ChevronUp, Clock, Landmark, Globe, Image as ImageIcon, Sparkles, Navigation } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { Perm } from '@/components/admin/WithPermission'
 
 const STATUS_BADGE = {
   Pending:  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -66,6 +67,12 @@ export function PendingApprovals({ compact = false }) {
     const t = token || localStorage.getItem('auth_token')
     try {
       const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
+      if (res.status === 403) {
+        // No permission to view approvals — hide the component silently
+        setItems([])
+        setLoading(false)
+        return
+      }
       const d = await res.json()
       if (d.success) setItems(d.data || [])
     } catch { toast.error('Failed to load approvals') }
@@ -156,22 +163,27 @@ export function PendingApprovals({ compact = false }) {
                         <ExternalLink size={13} />
                       </Link>
                     )}
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleAction(item._id, item.type, 'approve') }}
-                        disabled={!!acting}
-                        className="p-2 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50"
-                        title="Approve">
-                        {acting === item._id + 'approve' ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleAction(item._id, item.type, 'reject') }}
-                        disabled={!!acting}
-                        className="p-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50"
-                        title="Reject">
-                        {acting === item._id + 'reject' ? <RefreshCw size={13} className="animate-spin" /> : <X size={13} />}
-                      </button>
-                    </div>
+                    {/* Action buttons: only visible on the full approvals page with edit permission */}
+                    {!compact && (
+                      <Perm module="approvals" action="edit">
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAction(item._id, item.type, 'approve') }}
+                            disabled={!!acting}
+                            className="p-2 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-600 dark:text-green-400 transition-colors disabled:opacity-50"
+                            title="Approve">
+                            {acting === item._id + 'approve' ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAction(item._id, item.type, 'reject') }}
+                            disabled={!!acting}
+                            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 transition-colors disabled:opacity-50"
+                            title="Reject">
+                            {acting === item._id + 'reject' ? <RefreshCw size={13} className="animate-spin" /> : <X size={13} />}
+                          </button>
+                        </div>
+                      </Perm>
+                    )}
                     {isExpanded ? <ChevronUp size={16} className="text-neutral-400" /> : <ChevronDown size={16} className="text-neutral-400" />}
                   </div>
                 </div>

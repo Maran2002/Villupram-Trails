@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'settings', 'view')) return forbidden()
 
     const db = await getDb()
     let settings = await db.collection('settings').findOne({ _id: 'site_config' })
@@ -27,6 +28,8 @@ export async function GET(request) {
           youtube: ''
         },
         seoDescription: 'Discover the hidden gems, heritage, and culture of Villupuram.',
+        requirePlaceApproval: true,
+        requireReviewApproval: false,
         updatedAt: new Date()
       }
       await db.collection('settings').insertOne(settings)
@@ -42,7 +45,7 @@ export async function PUT(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'settings', 'edit')) return forbidden()
 
     const body = await request.json()
     const { _id, ...updateData } = body

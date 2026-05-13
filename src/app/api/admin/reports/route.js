@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 import { ObjectId } from 'mongodb'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'reports', 'view')) return forbidden()
 
     const db = await getDb()
     const reports = await db.collection('reports')
@@ -26,7 +27,7 @@ export async function PATCH(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'reports', 'edit')) return forbidden()
 
     const body = await request.json()
     const { id, status, actionTaken, actionReason } = body

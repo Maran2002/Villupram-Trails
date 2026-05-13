@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Users, MapPin, CheckCircle, MessageSquare, TrendingUp, ArrowUpRight, Clock, Eye, Activity, Shield } from 'lucide-react'
+import { Users, MapPin, CheckCircle, MessageSquare, TrendingUp, ArrowUpRight, Clock, Eye, Activity, Shield, Headset } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 import { PendingApprovals } from '@/components/admin/PendingApprovals'
+import { Perm } from '@/components/admin/WithPermission'
 import Link from 'next/link'
 
 const ACTION_LABELS = {
@@ -73,11 +74,22 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        <StatCard idx={0} label="Total Users"       value={s?.totalUsers ?? null}       icon={Users}        color="primary" sub={s ? `+${s.recentUsers} this month` : ''} href="/admin/contributors" />
-        <StatCard idx={1} label="Approved Places"   value={s?.totalPlaces ?? null}      icon={MapPin}        color="blue"    sub={s ? `+${s.recentPlaces} this week` : ''}  href="/admin/places" />
-        <StatCard idx={2} label="Pending Approvals" value={s?.pendingApprovals ?? null} icon={CheckCircle}   color="amber"   sub="Needs attention"                          href="/admin/approvals" />
-        <StatCard idx={3} label="Total Reviews"     value={s?.totalReviews ?? null}     icon={MessageSquare} color="green"   sub={s?.hiddenReviews ? `${s.hiddenReviews} hidden` : 'All visible'} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <Perm module="contributors" action="view">
+          <StatCard idx={0} label="Total Users"       value={s?.totalUsers ?? null}       icon={Users}        color="primary" sub={s ? `+${s.recentUsers} this month` : ''} href="/admin/contributors" />
+        </Perm>
+        <Perm module="places" action="view">
+          <StatCard idx={1} label="Approved Places"   value={s?.totalPlaces ?? null}      icon={MapPin}        color="blue"    sub={s ? `+${s.recentPlaces} this week` : ''}  href="/admin/places" />
+        </Perm>
+        <Perm module="approvals" action="view">
+          <StatCard idx={2} label="Pending Approvals" value={s?.pendingApprovals ?? null} icon={CheckCircle}   color="amber"   sub="Needs attention"                          href="/admin/approvals" />
+        </Perm>
+        <Perm module="reviews" action="view">
+          <StatCard idx={3} label="Total Reviews"     value={s?.totalReviews ?? null}     icon={MessageSquare} color="green"   sub={s?.hiddenReviews ? `${s.hiddenReviews} hidden` : 'All visible'} />
+        </Perm>
+        <Perm module="support" action="view">
+          <StatCard idx={4} label="Support Tickets"   value={s?.openTickets ?? null}      icon={Headset}       color="blue"    sub={s?.openTickets ? `${s.openTickets} need response` : 'No open tickets'} href="/admin/support" />
+        </Perm>
       </div>
 
       {/* Two Column */}
@@ -116,7 +128,9 @@ export default function AdminOverviewPage() {
               ))}
               <Link href="/admin/audit"
                 className="block text-center text-xs text-primary-500 hover:underline pt-2">
-                View full audit trail →
+                <Perm module="audit" action="view">
+                  View full audit trail →
+                </Perm>
               </Link>
             </div>
           )}

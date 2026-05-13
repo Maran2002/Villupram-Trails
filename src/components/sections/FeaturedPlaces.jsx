@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { ArrowRight, Sparkles } from 'lucide-react'
 
 export function FeaturedPlaces() {
-  const { data, loading, error } = usePlaces(1, 3)
+  const { data, loading, error } = usePlaces(1, 3, null, null, true)
   const places = data?.items || []
 
   return (

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/lib/store'
 import { 
   User, Mail, Camera, Save, MapPin, 
-  FileText, Loader2, Shield, Lock, Activity, Key, Eye, EyeOff
+  FileText, Loader2, Shield, Lock, Activity, Key, Eye, EyeOff, CheckCircle, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { compressToBase64 } from '@/lib/imageUtils'
@@ -159,9 +159,32 @@ export default function AdminProfilePage() {
           </form>
 
           <div className="bg-neutral-900 dark:bg-dark-700 rounded-3xl p-6 text-white border border-white/5 shadow-xl">
-            <Lock size={24} className="mb-3 opacity-80" />
-            <h3 className="font-bold text-sm mb-1">Privileged Access</h3>
-            <p className="text-[11px] opacity-60 leading-relaxed">Admin passwords grant full access to system records and audit trails. Keep your credentials secure.</p>
+            <Shield size={24} className="mb-3 opacity-80 text-primary-500" />
+            <h3 className="font-bold text-sm mb-3">Your Permissions</h3>
+            {user?._id === '6a01cdc39618522cd98e7bbf' ? (
+              <div className="text-[12px] opacity-80 leading-relaxed font-bold text-primary-400 bg-white/5 p-3 rounded-xl border border-white/10">
+                Superadmin Access: All Permissions Granted
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {Object.keys(user?.permissions || {}).length === 0 ? (
+                  <p className="text-[11px] opacity-60">No specific permissions granted yet.</p>
+                ) : (
+                  Object.entries(user?.permissions || {}).map(([mod, perms]) => (
+                    <div key={mod} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                      <div className="text-xs font-bold capitalize text-primary-400 mb-2 border-b border-white/10 pb-1">{mod}</div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px] uppercase font-bold tracking-wider">
+                        {['view', 'add', 'edit', 'delete'].map(action => (
+                          <div key={action} className={`flex items-center gap-1.5 ${perms[action] ? 'text-green-400' : 'text-neutral-500 line-through opacity-50'}`}>
+                            {perms[action] ? <CheckCircle size={10} /> : <X size={10} />} {action}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

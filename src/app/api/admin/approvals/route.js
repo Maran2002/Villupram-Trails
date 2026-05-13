@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'approvals', 'view')) return forbidden()
 
     const db = await getDb()
     // Fetch places that are Pending OR have a pendingUpdate
@@ -40,7 +41,7 @@ export async function PUT(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'approvals', 'edit')) return forbidden()
 
     const { itemId, type, action } = await request.json()
     const db = await getDb()
@@ -93,7 +94,7 @@ export async function PUT(request) {
       target: type.toLowerCase(), targetId: itemId,
     })
 
-    return NextResponse.json({ success: true, data: result })
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Process approval error:', error)
     return NextResponse.json({ success: false, error: 'Failed to process action' }, { status: 500 })

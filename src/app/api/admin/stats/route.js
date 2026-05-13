@@ -10,40 +10,46 @@ export async function GET(request) {
 
     const db = await getDb()
 
+    const now = new Date()
+    const monthAgo = new Date(now.getTime() - 30 * 86400000)
+    const weekAgo = new Date(now.getTime() - 7 * 86400000)
+
     const [
-      totalUsers, totalPlaces, totalReviews,
-      pendingPlaces, hiddenReviews,
-      recentUsers, recentPlaces,
+      totalUsers, recentUsers,
+      totalPlaces, recentPlaces, pendingPlaces,
+      totalReviews, hiddenReviews,
+      recentActivity,
+      openTickets, totalSupport
     ] = await Promise.all([
       db.collection('users').countDocuments({}),
+      db.collection('users').countDocuments({ createdAt: { $gte: monthAgo } }),
       db.collection('places').countDocuments({ status: 'Approved' }),
-      db.collection('reviews').countDocuments({ visible: true }),
-      db.collection('places').countDocuments({ status: 'Pending' }),
+      db.collection('places').countDocuments({ createdAt: { $gte: weekAgo }, status: 'Approved' }),
+      db.collection('places').countDocuments({ 
+        $or: [
+          { status: 'Pending' },
+          { pendingUpdate: { $exists: true } }
+        ]
+      }),
+      db.collection('reviews').countDocuments({}),
       db.collection('reviews').countDocuments({ visible: false }),
-      // New users in last 30 days
-      db.collection('users').countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 86400000) } }),
-      // New approved places in last 7 days
-      db.collection('places').countDocuments({ status: 'Approved', createdAt: { $gte: new Date(Date.now() - 7 * 86400000) } }),
+      db.collection('audit_logs').find({}).sort({ createdAt: -1 }).limit(10).toArray(),
+      db.collection('support_tickets').countDocuments({ status: 'open' }),
+      db.collection('support_tickets').countDocuments({}),
     ])
-
-    // Recent 5 audit log entries for activity feed
-    const recentActivity = await db.collection('audit_logs')
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .toArray()
 
     return NextResponse.json({
       success: true,
       data: {
-        totalUsers, totalPlaces, totalReviews,
-        pendingPlaces, hiddenReviews,
-        pendingApprovals: pendingPlaces + hiddenReviews,
-        recentUsers, recentPlaces,
+        totalUsers, recentUsers,
+        totalPlaces, recentPlaces, pendingApprovals: pendingPlaces,
+        totalReviews, hiddenReviews,
         recentActivity,
+        openTickets, totalSupport
       }
     })
-  } catch {
+  } catch (error) {
+    console.error('Stats error:', error)
     return NextResponse.json({ success: false, error: 'Failed to load stats' }, { status: 500 })
   }
 }

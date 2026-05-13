@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { getDb } from './mongodb'
 import { ObjectId } from 'mongodb'
+import { hasPermission, SUPERADMIN_ID } from './permissions'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret'
 
@@ -70,3 +71,6 @@ export async function writeAudit({ userId, username, role, action, target, targe
     // Never let audit failure break the main flow
   }
 }
+
+// Re-exported from permissions.js for backward compatibility with routes that import from auth
+export { hasPermission, SUPERADMIN_ID }

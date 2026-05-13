@@ -55,6 +55,12 @@ export async function POST(request, { params }) {
     }
 
     const db = await getDb()
+    const settings = await db.collection('settings').findOne({ _id: 'site_config' })
+
+    // If review approval is required, set visible to false for non-admins
+    if (user.role !== 'admin' && settings?.requireReviewApproval === true) {
+      doc.visible = false
+    }
 
     // Ensure the place exists and is approved
     const place = await db.collection('places').findOne({ _id: placeOid })

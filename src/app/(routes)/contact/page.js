@@ -27,6 +27,7 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
+      formData.topic = "From Contact Page"
       await apiClient.post('/support', formData)
       setSubmitted(true)
     } catch (error) {
@@ -115,7 +116,7 @@ export default function ContactPage() {
               Found incorrect data? Encountered inappropriate content? Helping us maintain integrity is just a click away.
             </p>
             <Link href="/report">
-              <Button variant="secondary" className="bg-white text-red-600 hover:bg-red-50 w-full md:w-auto px-8 rounded-2xl flex items-center gap-2">
+              <Button variant="ghost" className="bg-white text-red-600 hover:bg-red-50 w-full md:w-auto px-8 rounded-2xl flex items-center gap-2">
                 <Flag size={18} />
                 Raise a Report
                 <ArrowRight size={16} />

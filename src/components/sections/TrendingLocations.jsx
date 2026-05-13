@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { TrendingUp, ArrowRight } from 'lucide-react'
 
 export function TrendingLocations() {
-  const { data, loading, error } = usePlaces(1, 3, 'nature')
+  const { data, loading, error } = usePlaces(1, 3, null, null, null, true)
   const places = data?.items || []
 
   return (

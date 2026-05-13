@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -8,19 +8,23 @@ import {
   LayoutDashboard, Users, MapPin, CheckCircle,
   Flag, Settings, ChevronLeft, Menu, X,
   Bell, LogOut, Shield, Activity, MessageSquare,
-  BarChart2, User, Power
+  BarChart2, User, Power, Headset
 } from 'lucide-react'
 import { useAuthStore, useSettingsStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 import { AdminSearch } from '@/components/admin/AdminSearch'
+
+import { hasPermission } from '@/lib/permissions'
 
 const navItems = [
   { id: 'overview',      label: 'Overview',         href: '/admin',                icon: LayoutDashboard },
   { id: 'visitor-logs',  label: 'Visitor Logs',      href: '/admin/logs',           icon: BarChart2 },
   { id: 'places',        label: 'Places',            href: '/admin/places',         icon: MapPin },
   { id: 'reviews',       label: 'Reviews',           href: '/admin/reviews',        icon: MessageSquare },
+  { id: 'users',         label: 'Admins & Users',    href: '/admin/users',          icon: Users },
   { id: 'contributors',  label: 'Contributors',      href: '/admin/contributors',   icon: Users },
   { id: 'approvals',     label: 'Pending Approvals', href: '/admin/approvals',      icon: CheckCircle },
+  { id: 'support',       label: 'Support Tickets',   href: '/admin/support',        icon: Headset },
   { id: 'audit',         label: 'Audit Trail',       href: '/admin/audit',          icon: Activity },
   { id: 'reports',       label: 'Reports',           href: '/admin/reports',        icon: Flag },
   { id: 'profile',       label: 'My Profile',        href: '/admin/profile',        icon: User },
@@ -30,6 +34,9 @@ const navItems = [
 function AdminSidebarNav({ collapsed, setCollapsed }) {
   const pathname = usePathname()
   const { settings } = useSettingsStore()
+  const { user } = useAuthStore()
+
+  const allowedItems = navItems.filter(item => hasPermission(user, item.id === 'visitor-logs' ? 'logs' : item.id, 'view'))
 
   return (
     <aside className={`h-screen sticky top-0 flex flex-col bg-neutral-900 text-white transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
@@ -47,7 +54,7 @@ function AdminSidebarNav({ collapsed, setCollapsed }) {
       </div>
 
       <nav className="flex-1 py-4 overflow-y-auto space-y-1 px-2">
-        {navItems.map(({ id, label, href, icon: Icon }) => {
+        {allowedItems.map(({ id, label, href, icon: Icon }) => {
           const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href))
           return (
             <Link key={id} href={href} title={collapsed ? label : undefined} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${isActive ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' : 'text-neutral-400 hover:bg-white/5 hover:text-white'}`}>
@@ -76,9 +83,28 @@ function AdminSidebarNav({ collapsed, setCollapsed }) {
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout } = useAuthStore()
+
+  useEffect(() => {
+    if (useAuthStore.persist?.hasHydrated?.()) {
+      setHydrated(true)
+      return
+    }
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => setHydrated(true))
+    const fallback = setTimeout(() => setHydrated(true), 300)
+    return () => { unsub?.(); clearTimeout(fallback) }
+  }, [])
+
+  // Redirect unauthenticated users after hydration
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user || user.role !== 'admin') {
+      router.replace('/auth/login')
+    }
+  }, [hydrated, user, router])
 
   const activeItem = navItems.find(item => pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))) || navItems[0]
 
@@ -98,6 +124,14 @@ export default function AdminLayout({ children }) {
     } catch (error) {
       toast.error('Failed to sign out', { id: loadingToast })
     }
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-neutral-100 dark:bg-dark-900">
+        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

@@ -107,6 +107,8 @@ export function buildPlaceDoc(body, submitter, forceStatus) {
     amenities,
     images,
     status,
+    isTrending  : !!body.isTrending,
+    isFeatured  : !!body.isFeatured,
     rating      : 0,
     reviewCount : 0,
     ...(submitter ? { submittedBy: { userId: submitter._id, username: submitter.username } } : {}),
@@ -156,10 +158,14 @@ export function buildPlacePatch(body, { isAdmin } = {}) {
     patch.location = { address, ...(latLng || {}) }
   }
 
-  // Only admins can directly set status
-  if (isAdmin && 'status' in body) {
-    const s = str(body.status)
-    if (VALID_STATUSES.includes(s)) patch.status = s
+  // Only admins can directly set status, trending, and featured
+  if (isAdmin) {
+    if ('status' in body) {
+      const s = str(body.status)
+      if (VALID_STATUSES.includes(s)) patch.status = s
+    }
+    if ('isTrending' in body) patch.isTrending = !!body.isTrending
+    if ('isFeatured' in body) patch.isFeatured = !!body.isFeatured
   }
 
   patch.updatedAt = new Date()
@@ -192,7 +198,7 @@ export function buildReviewDoc(body, user, placeObjectId) {
 
 /* ─── User schema ───────────────────────────────────────────── */
 
-export function buildUserDoc({ email, username, hashedPassword }) {
+export function buildUserDoc({ email, username, hashedPassword, role = 'user', permissions = {} }) {
   const errors = []
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('invalid email')
   if (!username || username.length < 3) errors.push('username must be at least 3 characters')
@@ -202,13 +208,45 @@ export function buildUserDoc({ email, username, hashedPassword }) {
     email     : str(email).toLowerCase(),
     username  : str(username),
     password  : hashedPassword,
-    role      : 'user',
+    role      : ['admin', 'user'].includes(role) ? role : 'user',
     isVerified: false,
     contributions: { placesAdded: 0, reviewsWritten: 0, photosUploaded: 0 },
     createdAt : new Date(),
   }
+  
+  if (doc.role === 'admin') {
+    doc.permissions = permissions;
+  }
 
   return { doc, errors }
+}
+
+export function buildUserPatch(body) {
+  const patch = {}
+  const errors = []
+
+  if ('email' in body) {
+    const v = str(body.email).toLowerCase()
+    if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) errors.push('invalid email')
+    else patch.email = v
+  }
+  if ('username' in body) {
+    const v = str(body.username)
+    if (!v || v.length < 3) errors.push('username must be at least 3 characters')
+    else patch.username = v
+  }
+  if ('role' in body) {
+    const v = str(body.role)
+    if (['admin', 'user'].includes(v)) patch.role = v
+  }
+  if ('permissions' in body) {
+    patch.permissions = body.permissions || {}
+  }
+  if ('isVerified' in body) {
+    patch.isVerified = !!body.isVerified
+  }
+
+  return { patch, errors }
 }
 
 /* ─── Visitor Log schema ────────────────────────────────────── */
