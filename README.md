@@ -8,21 +8,25 @@ Villupuram Discovery Hub is a community-driven platform for travelers to explore
 
 This project is **open-sourced and open to contributions!** We welcome developers, designers, and local experts to help us build the most comprehensive travel and heritage directory for Villupuram.
 
-## Key Features (Latest Updates - May 13, 2026)
+## Key Features (Latest Updates - May 14, 2026)
 
-### 🛡️ Security & Session Management
-- **AES-256 Encryption**: Integrated CryptoJS into local storage persistence, ensuring all sensitive user data is encrypted at rest on the client side.
-- **Automated Session Recovery**: Global API interceptors detect token expiry (401 errors) and automatically synchronize the UI state by forcing a secure logout and redirect.
+### 🛡️ Security & Access Control (RBAC)
+- **Granular Permissions**: Implemented a robust Role-Based Access Control (RBAC) system using a centralized `hasPermission` engine.
+- **Superadmin Authority**: Hardened the platform with a `SUPERADMIN_ID` level, ensuring critical administrative actions are restricted.
+- **AES-256 Encryption**: Integrated CryptoJS into local storage persistence for client-side data security.
+- **Automated Session Recovery**: Global API interceptors detect token expiry (401 errors) and synchronize UI state.
 
-### 🚩 Community Integrity (Reporting System)
-- **Content Flagging**: Comprehensive reporting system allowing users and guests to flag inappropriate reviews, incorrect place data, or user misconduct.
-- **Admin Moderation Hub**: A dedicated dashboard for moderators to review, track, and resolve community reports with official resolution messaging.
-- **Transparency Tracking**: Users can monitor the status of their reports (Pending, Open, Resolved) and see detailed moderator actions from their dashboard.
+### 🎧 Support & Community Management
+- **Centralized Support Hub**: New administrative dashboard to manage user inquiries from the Contact and FAQ pages with status tracking.
+- **Email Integration**: Integrated mail-to shortcuts for admins to respond directly to community inquiries.
+- **Content Moderation Toggles**: Global switches for "Automatic Approvals" vs "Manual Moderation" for both new places and community reviews.
 
-### 📈 Analytics & Administration
-- **Visitor Insights**: Real-time visitor tracking and logging system providing admins with traffic analytics and session data.
-- **Global Admin Search**: Intelligent, fuzzy search integrated into the admin panel for deep-linking across Users, Places, Reviews, and Sidebar navigation.
-- **Site Configuration**: Centralized management for site identity, social links, contact information, and SEO metadata.
+### 🚩 Content Curation & Integrity
+- **Curated Feeds**: New "Trending" (🔥) and "Featured" (⭐) toggles allowing admins to hand-pick destinations for the homepage.
+- **Enhanced Places Management**: Dedicated "Requests" tab for handling submissions with a side-by-side diff view of changes.
+- **Admin Audit Trail**: Comprehensive logging for all administrative actions, including approvals and settings modifications.
+- **Visitor Insights**: Real-time visitor tracking and logging system providing traffic analytics.
+- **Global Admin Search**: Intelligent, fuzzy search for deep-linking across Users, Places, Reviews, and Navigation.
 
 ### 🏗️ Architectural Refinements
 - **Layout Groups**: Modern Next.js organization using route groups (`(admin)`, `(dashboard)`, `(auth)`, `(routes)`) for distinct layout management.
