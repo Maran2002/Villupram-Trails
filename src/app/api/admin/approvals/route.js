@@ -3,6 +3,8 @@ import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
 import { hasPermission } from '@/lib/permissions'
+import clientPromise from '@/lib/mongodb'
+import { recalculatePlaceReviewStats } from '@/lib/reviewStats'
 
 export async function GET(request) {
   try {
@@ -19,7 +21,9 @@ export async function GET(request) {
       ]
     }).toArray()
     
-    const hiddenReviews = await db.collection('reviews').find({ visible: false }).toArray()
+    const hiddenReviews = hasPermission(user, 'reviews', 'view')
+      ? await db.collection('reviews').find({ visible: false }).toArray()
+      : []
 
     const items = [
       ...pendingPlaces.map(p => ({ 
@@ -44,6 +48,9 @@ export async function PUT(request) {
     if (!hasPermission(user, 'approvals', 'edit')) return forbidden()
 
     const { itemId, type, action } = await request.json()
+    if (!ObjectId.isValid(itemId) || !['Place', 'Review'].includes(type) || !['approve', 'reject'].includes(action)) {
+      return NextResponse.json({ success: false, error: 'Invalid approval action' }, { status: 400 })
+    }
     const db = await getDb()
 
     let result
@@ -81,11 +88,23 @@ export async function PUT(request) {
     } else {
       // Review visibility toggle
       const visible = action === 'approve'
-      result = await db.collection('reviews').findOneAndUpdate(
-        { _id: new ObjectId(itemId) },
-        { $set: { visible, updatedAt: new Date() } },
-        { returnDocument: 'after' }
-      )
+      const reviewId = new ObjectId(itemId)
+      const review = await db.collection('reviews').findOne({ _id: reviewId })
+      if (!review) return NextResponse.json({ success: false, error: 'Review not found' }, { status: 404 })
+      const client = await clientPromise
+      const session = client.startSession()
+      try {
+        await session.withTransaction(async () => {
+          await db.collection('reviews').updateOne(
+            { _id: reviewId },
+            { $set: { visible, updatedAt: new Date() } },
+            { session }
+          )
+          await recalculatePlaceReviewStats(db, review.placeId, session)
+        })
+      } finally {
+        await session.endSession()
+      }
     }
 
     await writeAudit({

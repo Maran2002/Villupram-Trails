@@ -25,12 +25,15 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (password.length < 12) { toast.error('Password must be at least 12 characters'); return }
     try {
       await register(email, password, username)
-      toast.success('Account created! Welcome to the community.')
-      router.push('/dashboard')
+      toast.success('Verification code sent. Check your email.')
+      router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
     } catch (err) {
+      if (err.details?.accountCreated) {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
+      }
       toast.error(err.message || 'Registration failed')
     }
   }
@@ -57,7 +60,7 @@ export default function RegisterPage() {
             Join the community of heritage explorers
           </h2>
           <p className="text-white/70 mb-8 leading-relaxed">
-            Create your free account and start contributing to the preservation of Villupuram's rich cultural heritage.
+            Create your free account and start contributing to the preservation of Villupuram&apos;s rich cultural heritage.
           </p>
           <div className="space-y-3">
             {PERKS.map((perk) => (
@@ -136,7 +139,7 @@ export default function RegisterPage() {
                 <input
                   type={showPw ? 'text' : 'password'} required value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
+                  placeholder="Min. 12 characters"
                   className="w-full pl-10 pr-11 py-3 rounded-xl border border-neutral-200 dark:border-dark-600 bg-white dark:bg-dark-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 transition-all"
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)}

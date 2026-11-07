@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { getJwtSecret } from '@/lib/auth'
+import { isSuperAdmin } from '@/lib/permissions'
 
-const JWT_SECRET = process.env.JWT_SECRET
 const ADMIN_TOKEN = process.env.ADMIN_ACCESS_TOKEN
 
 export async function POST(request) {
   try {
     const { username, password, accessToken } = await request.json()
+    const jwtSecret = getJwtSecret()
 
     // First gate — static access token must match
     if (!accessToken || accessToken !== ADMIN_TOKEN) {
@@ -33,20 +35,23 @@ export async function POST(request) {
     }
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email, role: 'admin' },
-      JWT_SECRET,
+      { userId: user._id, email: user.email, role: 'admin', adminSession: true, sessionVersion: user.sessionVersion || 0 },
+      jwtSecret,
       { expiresIn: '1h' }
     )
 
     const { password: _, ...userWithoutPassword } = user
 
-    const response = NextResponse.json({ success: true, data: { token, user: userWithoutPassword } })
+    const response = NextResponse.json({
+      success: true,
+      data: { user: { ...userWithoutPassword, isSuperAdmin: isSuperAdmin(user) } },
+    })
 
     response.cookies.set('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 8,
+      maxAge: 60 * 60,
       path: '/',
     })
 

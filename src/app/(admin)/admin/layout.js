@@ -8,11 +8,12 @@ import {
   LayoutDashboard, Users, MapPin, CheckCircle,
   Flag, Settings, ChevronLeft, Menu, X,
   Bell, LogOut, Shield, Activity, MessageSquare,
-  BarChart2, User, Power, Headset
+  BarChart2, User, Power, Headset, Mail
 } from 'lucide-react'
 import { useAuthStore, useSettingsStore } from '@/lib/store'
 import toast from 'react-hot-toast'
 import { AdminSearch } from '@/components/admin/AdminSearch'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 
 import { hasPermission } from '@/lib/permissions'
 
@@ -25,6 +26,8 @@ const navItems = [
   { id: 'contributors',  label: 'Contributors',      href: '/admin/contributors',   icon: Users },
   { id: 'approvals',     label: 'Pending Approvals', href: '/admin/approvals',      icon: CheckCircle },
   { id: 'support',       label: 'Support Tickets',   href: '/admin/support',        icon: Headset },
+  { id: 'notifications',label: 'Notifications',      href: '/admin/notifications',   icon: Bell },
+  { id: 'newsletter',    label: 'Newsletter Emails', href: '/admin/newsletter',     icon: Mail },
   { id: 'audit',         label: 'Audit Trail',       href: '/admin/audit',          icon: Activity },
   { id: 'reports',       label: 'Reports',           href: '/admin/reports',        icon: Flag },
   { id: 'profile',       label: 'My Profile',        href: '/admin/profile',        icon: User },
@@ -83,37 +86,19 @@ function AdminSidebarNav({ collapsed, setCollapsed }) {
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [hydrated, setHydrated] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { user, logout } = useAuthStore()
-
-  useEffect(() => {
-    if (useAuthStore.persist?.hasHydrated?.()) {
-      setHydrated(true)
-      return
-    }
-    const unsub = useAuthStore.persist?.onFinishHydration?.(() => setHydrated(true))
-    const fallback = setTimeout(() => setHydrated(true), 300)
-    return () => { unsub?.(); clearTimeout(fallback) }
-  }, [])
+  const { user, logout, isSessionChecked } = useAuthStore()
 
   // Redirect unauthenticated users after hydration
   useEffect(() => {
-    if (!hydrated) return
+    if (!isSessionChecked) return
     if (!user || user.role !== 'admin') {
       router.replace('/auth/login')
     }
-  }, [hydrated, user, router])
+  }, [isSessionChecked, user, router])
 
   const activeItem = navItems.find(item => pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))) || navItems[0]
-
-  const handleNotifications = () => {
-    toast('Notifications will be updated soon!', {
-      icon: '🔔',
-      style: { borderRadius: '12px', background: '#333', color: '#fff' },
-    })
-  }
 
   const handleLogout = async () => {
     const loadingToast = toast.loading('Signing out...')
@@ -126,7 +111,7 @@ export default function AdminLayout({ children }) {
     }
   }
 
-  if (!hydrated) {
+  if (!isSessionChecked) {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-100 dark:bg-dark-900">
         <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -163,9 +148,7 @@ export default function AdminLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={handleNotifications} className="relative p-2 rounded-xl bg-neutral-100 dark:bg-dark-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-dark-600 transition">
-              <Bell size={18} /><span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-500" />
-            </button>
+            <NotificationCenter className="bg-neutral-100 dark:bg-dark-700 hover:bg-neutral-200 dark:hover:bg-dark-600" />
             
             <div className="h-8 w-px bg-neutral-200 dark:bg-dark-700 mx-1 hidden sm:block"></div>
             

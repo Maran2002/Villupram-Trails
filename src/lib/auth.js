@@ -1,20 +1,25 @@
 import jwt from 'jsonwebtoken'
 import { getDb } from './mongodb'
 import { ObjectId } from 'mongodb'
-import { hasPermission, SUPERADMIN_ID } from './permissions'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+export function getJwtSecret() {
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be configured with at least 32 characters')
+  }
+  return secret
+}
 
 /**
- * Verify JWT from Authorization header and return { userId, email, role }.
+ * Verify the HttpOnly session cookie and return the decoded user claims.
  * Returns null if missing/invalid.
  */
 export function verifyToken(request) {
+  const cookieToken = request.cookies?.get?.('auth_token')?.value
+    || request.headers.get('cookie')?.match(/(?:^|;\s*)auth_token=([^;]+)/)?.[1]
+  if (!cookieToken) return null
   try {
-    const auth = request.headers.get('authorization') || ''
-    if (!auth.startsWith('Bearer ')) return null
-    const token = auth.slice(7)
-    return jwt.verify(token, JWT_SECRET)
+    return jwt.verify(decodeURIComponent(cookieToken), getJwtSecret())
   } catch {
     return null
   }
@@ -33,6 +38,8 @@ export async function getAuthUser(request) {
       { _id: new ObjectId(decoded.userId) },
       { projection: { password: 0 } }
     )
+    if (user?.role === 'admin' && decoded.adminSession !== true) return null
+    if (user && Number(decoded.sessionVersion || 0) !== Number(user.sessionVersion || 0)) return null
     return user || null
   } catch {
     return null
@@ -73,4 +80,4 @@ export async function writeAudit({ userId, username, role, action, target, targe
 }
 
 // Re-exported from permissions.js for backward compatibility with routes that import from auth
-export { hasPermission, SUPERADMIN_ID }
+export { hasPermission, SUPERADMIN_ID, isSuperAdmin } from './permissions'

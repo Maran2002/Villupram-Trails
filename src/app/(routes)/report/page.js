@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Send, Loader2, CheckCircle2, ShieldAlert, Flag, Info } from 'lucide-react'
 import { Button } from '@/components/common/Button'
@@ -28,7 +28,7 @@ const reasonOptions = [
   { value: 'other', label: 'Other' }
 ]
 
-export default function ReportPage() {
+function ReportForm() {
   const { user } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -77,7 +77,7 @@ export default function ReportPage() {
           </div>
           <h2 className="font-serif text-3xl font-bold text-neutral-900 dark:text-white mb-4">Report Submitted</h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
-            Thank you for helping us keep our community safe. Our moderation team will review your report within 24-48 hours.
+            Thank you for helping us keep our community safe. Your report has been submitted for moderator review. The site does not currently promise a review time or send automatic email updates.
           </p>
           <Button onClick={() => router.push('/')} className="w-full py-4 rounded-2xl">Return to Home</Button>
         </motion.div>
@@ -193,5 +193,17 @@ export default function ReportPage() {
         </motion.form>
       </div>
     </div>
+  )
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen py-24 flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary-500" size={32} />
+      </div>
+    }>
+      <ReportForm />
+    </Suspense>
   )
 }

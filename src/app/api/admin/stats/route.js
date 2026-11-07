@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'overview', 'view')) return forbidden()
 
     const db = await getDb()
 

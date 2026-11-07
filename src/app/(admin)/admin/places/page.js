@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { MapPin, ExternalLink, Edit2, Trash2, Search, RefreshCw, ChevronLeft, ChevronRight, Check, X, Clock, AlertCircle, ArrowRight, TrendingUp, Star } from 'lucide-react'
 import Link from 'next/link'
@@ -147,7 +147,23 @@ function RequestsTab() {
     setLoading(false)
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    let active = true
+    const loadRequests = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      try {
+        const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
+        const d = await res.json()
+        if (active && d.success) setItems(d.data.filter(i => i.type === 'Place'))
+      } catch {
+        if (active) toast.error('Failed to load requests')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    loadRequests()
+    return () => { active = false }
+  }, [token])
 
   const handleAction = async (id, action) => {
     setActing(id + action)
@@ -220,6 +236,7 @@ export default function AdminPlacesPage() {
   const [deleting, setDeleting] = useState(null)
   const [tab, setTab] = useState('places') // places | requests
   const LIMIT = 15
+  const searchRef = useRef(search)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -238,11 +255,35 @@ export default function AdminPlacesPage() {
     setLoading(false)
   }, [token, search, status])
 
-  useEffect(() => { setPage(1); load(1) }, [token, status])
+  useEffect(() => { searchRef.current = search }, [search])
+
+  useEffect(() => {
+    let active = true
+    const loadPlaces = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      const params = new URLSearchParams({ page: 1, limit: LIMIT })
+      if (searchRef.current) params.set('search', searchRef.current)
+      try {
+        const res = await fetch(`/api/places?${params}`, { headers: { Authorization: `Bearer ${t}` } })
+        const d = await res.json()
+        if (active && d.success) {
+          const items = d.data?.items || []
+          setPlaces(status ? items.filter(pl => pl.status === status) : items)
+          setTotal(d.data?.total || 0)
+        }
+      } catch {
+        if (active) toast.error('Failed to load places')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    loadPlaces()
+    return () => { active = false }
+  }, [token, status])
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); load(1) }, 400)
     return () => clearTimeout(t)
-  }, [search])
+  }, [search, load])
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
@@ -334,7 +375,7 @@ export default function AdminPlacesPage() {
               </div>
               <div className="flex gap-2 flex-wrap">
                 {['', 'Approved', 'Pending', 'Rejected', 'Draft'].map(s => (
-                  <button key={s} onClick={() => setStatus(s)}
+                  <button key={s} onClick={() => { setPage(1); setLoading(true); setStatus(s) }}
                     className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors ${status === s ? 'bg-primary-500 text-white border-primary-500' : 'bg-white dark:bg-dark-800 border-neutral-200 dark:border-dark-600 text-neutral-600 dark:text-neutral-400 hover:border-primary-400'}`}>
                     {s || 'All'}
                   </button>

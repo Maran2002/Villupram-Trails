@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { ObjectId } from 'mongodb'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -22,13 +23,16 @@ try {
   })
 } catch {}
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/villupuram_db'
+const uri = process.env.MONGODB_URI
+const ADMIN_USERNAME = process.env.INITIAL_ADMIN_USERNAME?.trim()
+const ADMIN_EMAIL = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase()
+const ADMIN_PASSWORD = process.env.INITIAL_ADMIN_PASSWORD
+const REQUIRED_MODULES = ['places', 'reviews', 'users', 'audit', 'reports', 'settings', 'contributors', 'logs', 'approvals', 'support', 'search']
 
-// ── Admin credentials (change before running) ────────────────
-const ADMIN_USERNAME = 'vpm_admin'
-const ADMIN_EMAIL    = 'admin@villupuram.local'
-const ADMIN_PASSWORD = 'Admin@2026!'   // ← change this
-// ─────────────────────────────────────────────────────────────
+if (!uri) throw new Error('MONGODB_URI must be configured; refusing to use a local default database')
+if (!ADMIN_USERNAME || !ADMIN_EMAIL || !ADMIN_PASSWORD || ADMIN_PASSWORD.length < 12) {
+  throw new Error('Set INITIAL_ADMIN_USERNAME, INITIAL_ADMIN_EMAIL, and INITIAL_ADMIN_PASSWORD (at least 12 characters)')
+}
 
 async function main() {
   const client = new MongoClient(uri)
@@ -40,35 +44,36 @@ async function main() {
   })
 
   if (existing) {
-    console.log(`⚠  User "${existing.username}" already exists (role: ${existing.role}).`)
-    if (existing.role !== 'admin') {
-      await db.collection('users').updateOne(
-        { _id: existing._id },
-        { $set: { role: 'admin' } }
-      )
-      console.log('✓  Role updated to admin.')
-    } else {
-      console.log('   Nothing to do.')
-    }
     await client.close()
-    return
+    throw new Error('An account with the requested username or email already exists; no changes were made')
+  }
+
+  const existingAdmin = await db.collection('users').findOne({ role: 'admin' }, { projection: { _id: 1 } })
+  if (existingAdmin) {
+    await client.close()
+    throw new Error('An administrator already exists; use the authenticated user management workflow')
   }
 
   const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12)
+  const superadminId = new ObjectId()
+  const permissions = Object.fromEntries(REQUIRED_MODULES.map((module) => [module, {
+    view: true, add: true, edit: true, delete: true,
+  }]))
   await db.collection('users').insertOne({
+    _id          : superadminId,
     username     : ADMIN_USERNAME,
     email        : ADMIN_EMAIL,
     password     : hashed,
     role         : 'admin',
+    permissions,
+    sessionVersion: 0,
     isVerified   : true,
     contributions: { placesAdded: 0, reviewsWritten: 0, photosUploaded: 0 },
     createdAt    : new Date(),
   })
 
-  console.log('✓  Admin user created successfully.\n')
-  console.log('  Username :', ADMIN_USERNAME)
-  console.log('  Email    :', ADMIN_EMAIL)
-  console.log('  Password :', ADMIN_PASSWORD)
+  console.log('Initial administrator created. Configure SUPERADMIN_ID with this account ID and restart the application before using administrative APIs:')
+  console.log(superadminId.toString())
   await client.close()
 }
 

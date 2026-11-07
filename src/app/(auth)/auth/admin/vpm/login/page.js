@@ -14,13 +14,8 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
   const router = useRouter()
-  const setUser = useAuthStore((s) => s.setUser)
-  const setToken = (token) => {
-    useAuthStore.setState({ token })
-    localStorage.setItem('auth_token', token)
-  }
-
   // Step 1 — verify access token
   const handleTokenSubmit = (e) => {
     e.preventDefault()
@@ -34,6 +29,7 @@ export default function AdminLoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setLoginError('')
     try {
       const res = await fetch('/api/auth/admin-login', {
         method: 'POST',
@@ -44,13 +40,14 @@ export default function AdminLoginPage() {
       if (!data.success) throw new Error(data.error || 'Login failed')
 
       // Persist in Zustand
-      useAuthStore.setState({ user: data.data.user, token: data.data.token })
-      localStorage.setItem('auth_token', data.data.token)
+      useAuthStore.getState().setUser(data.data.user)
 
       toast.success('Access granted')
       router.push('/admin')
     } catch (err) {
-      toast.error(err.message || 'Authentication failed')
+      const message = err.message || 'Authentication failed'
+      setLoginError(message)
+      toast.error(message)
       // On credentials failure, stay on credentials step
     } finally {
       setLoading(false)
@@ -116,6 +113,12 @@ export default function AdminLoginPage() {
               >
                 <h1 className="text-xl font-serif font-bold text-white text-center mb-1">Admin Sign In</h1>
                 <p className="text-neutral-500 text-xs text-center mb-7">Username and password required</p>
+
+                {loginError && (
+                  <div role="alert" aria-live="assertive" className="mb-4 rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm font-medium text-red-300">
+                    {loginError}
+                  </div>
+                )}
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="relative">

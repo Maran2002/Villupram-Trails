@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 import { buildUserDoc } from '@/lib/schemas'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+import { issueOtp, normalizeEmail, publicOtpError } from '@/lib/emailOtp'
 
 export async function POST(request) {
   try {
     const { email, password, username } = await request.json()
 
-    if (!password || password.length < 6) {
+    if (typeof password !== 'string' || password.length < 12) {
       return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
+        { success: false, error: 'Password must be at least 12 characters' },
         { status: 422 }
       )
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    const { doc, errors } = buildUserDoc({ email, username, hashedPassword })
+    const { doc, errors } = buildUserDoc({ email: normalizeEmail(email), username, hashedPassword, isVerified: false })
 
     if (errors.length) {
       return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 422 })
@@ -36,28 +34,15 @@ export async function POST(request) {
     }
 
     const result = await db.collection('users').insertOne(doc)
+    const otpResult = await issueOtp({ db, user: { ...doc, _id: result.insertedId }, purpose: 'email_verification', force: true })
+    if (!otpResult.ok) {
+      return NextResponse.json({ success: false, error: publicOtpError(otpResult), accountCreated: true }, { status: 503 })
+    }
 
-    const token = jwt.sign(
-      { userId: result.insertedId, email: doc.email, role: doc.role },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
-
-    const { password: _, ...safe } = doc
-
-    const response = NextResponse.json(
-      { success: true, data: { token, user: { ...safe, _id: result.insertedId } } },
-      { status: 201 }
-    )
-    response.cookies.set('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    return response
+    return NextResponse.json({
+      success: true,
+      data: { email: doc.email, message: 'Enter the verification code sent to your email.' },
+    }, { status: 201 })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to register' }, { status: 500 })
   }

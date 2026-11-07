@@ -1,55 +1,33 @@
-/**
- * Utility for Google Maps API interactions.
- * Uses NEXT_PUBLIC_GOOGLE_MAPS_KEY from environment.
- */
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
-
-/**
- * Generates a Google Maps external search URL
- */
+/** Build links and same-origin map image URLs without exposing the Google key. */
 export function getExternalMapUrl(placeName, location = {}) {
   const { lat, lng, address } = location
-  if (lat && lng) {
-    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+  if (lat != null && lng != null && lat !== '' && lng !== '' && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
   }
-  const query = encodeURIComponent(`${placeName} ${address || ''}`.trim())
+  const query = encodeURIComponent(`${placeName || ''} ${address || ''}`.trim())
   return `https://www.google.com/maps/search/?api=1&query=${query}`
 }
 
-/**
- * Generates an Embed API URL for an iframe
- */
-export function getEmbedMapUrl(location = {}) {
-  const { lat, lng, address } = location
-  const query = lat && lng ? `${lat},${lng}` : encodeURIComponent(address || 'Villupuram, Tamil Nadu')
-  return `https://www.google.com/maps/embed/v1/place?key=${API_KEY || ''}&q=${query}&zoom=14`
-}
-
-/**
- * Generates a Static Map image URL
- */
-export function getStaticMapUrl(lat, lng, zoom = 15, size = '600x300') {
-  if (!lat || !lng || !API_KEY) return null
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&markers=color:red%7C${lat},${lng}&key=${API_KEY}`
-}
-
-/**
- * Performs reverse geocoding to get address from coordinates
- * (Requires Geocoding API enabled on the key)
- */
-export async function reverseGeocode(lat, lng) {
-  if (!API_KEY) throw new Error('Google Maps API key missing')
-  
-  try {
-    const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`)
-    const data = await res.json()
-    if (data.status === 'OK') {
-      return data.results[0].formatted_address
-    }
-    throw new Error(data.error_message || data.status)
-  } catch (error) {
-    console.error('Geocoding error:', error)
+export function getStaticMapUrl(lat, lng, zoom = 15) {
+  if (lat == null || lng == null || lat === '' || lng === '') return null
+  const latitude = Number(lat)
+  const longitude = Number(lng)
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
     return null
   }
+  const params = new URLSearchParams({ lat: String(latitude), lng: String(longitude), zoom: String(zoom) })
+  return `/api/maps/static?${params.toString()}`
+}
+
+/** Reverse geocoding is proxied through our authenticated server route. */
+export async function reverseGeocode(lat, lng) {
+  const response = await fetch('/api/maps/reverse-geocode', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ lat, lng }),
+  })
+  const result = await response.json()
+  if (!response.ok || !result.success) throw new Error(result.error || 'Address lookup failed')
+  return result.data.address
 }

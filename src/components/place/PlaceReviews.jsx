@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { Star, Trash2, User, EyeOff, Eye } from 'lucide-react'
 import Link from 'next/link'
@@ -18,10 +18,10 @@ export function PlaceReviews({ placeId }) {
   const [comment, setComment] = useState('')
   const [hovered, setHovered] = useState(0)
 
-  const authHeader = () => ({
+  const authHeader = useCallback(() => ({
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token || localStorage.getItem('auth_token') || ''}`,
-  })
+  }), [token])
 
   useEffect(() => {
     if (!placeId) return
@@ -30,7 +30,7 @@ export function PlaceReviews({ placeId }) {
       .then(d => setReviews(d.data || []))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [placeId])
+  }, [placeId, authHeader])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

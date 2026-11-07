@@ -70,7 +70,25 @@ export default function AuditTrailPage() {
     setLoading(false)
   }
 
-  useEffect(() => { fetchLogs(1); setPage(1) }, [filter, token])
+  useEffect(() => {
+    let active = true
+    const loadLogs = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      const params = new URLSearchParams({ page: 1, limit: 30 })
+      if (filter) params.set('action', filter)
+      try {
+        const res = await fetch(`/api/admin/audit?${params}`, { headers: { Authorization: `Bearer ${t}` } })
+        const data = await res.json()
+        if (active && data.success) {
+          setLogs(data.data.logs)
+          setTotal(data.data.total)
+        }
+      } catch {}
+      if (active) setLoading(false)
+    }
+    loadLogs()
+    return () => { active = false }
+  }, [filter, token])
 
   return (
     <WithPermission module="audit" action="view">
@@ -83,7 +101,7 @@ export default function AuditTrailPage() {
           </div>
           <div className="flex items-center gap-2 bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-700 rounded-xl px-3 py-2">
             <Filter size={14} className="text-neutral-400" />
-            <select value={filter} onChange={e => setFilter(e.target.value)}
+            <select value={filter} onChange={e => { setPage(1); setLoading(true); setFilter(e.target.value) }}
               className="text-sm bg-transparent text-neutral-700 dark:text-neutral-300 focus:outline-none">
               <option value="">All actions</option>
               <option value="place.create">Place Added</option>
@@ -141,7 +159,7 @@ export default function AuditTrailPage() {
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                           {ACTION_LABELS[log.action] || log.action}
                         </span>
-                        {log.meta?.name && <span className="text-sm font-medium text-neutral-900 dark:text-white truncate max-w-[160px]">"{log.meta.name}"</span>}
+                        {log.meta?.name && <span className="text-sm font-medium text-neutral-900 dark:text-white truncate max-w-[160px]">&quot;{log.meta.name}&quot;</span>}
                       </div>
                     </div>
                     <div className="shrink-0 text-xs text-neutral-400">

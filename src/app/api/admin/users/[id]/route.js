@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
-import { getAuthUser, unauthorized, forbidden, hasPermission, writeAudit, SUPERADMIN_ID } from '@/lib/auth'
+import { getAuthUser, unauthorized, forbidden, hasPermission, writeAudit, SUPERADMIN_ID, isSuperAdmin } from '@/lib/auth'
 import { ObjectId } from 'mongodb'
 import { buildUserPatch } from '@/lib/schemas'
 import bcrypt from 'bcryptjs'
@@ -14,11 +14,16 @@ export async function PUT(request, { params }) {
 
     const { id } = await params
     if (!ObjectId.isValid(id)) return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 })
+    const targetId = new ObjectId(id).toString()
 
     const body = await request.json()
 
+    if ((body.role !== undefined || body.permissions !== undefined || body.isVerified !== undefined) && !isSuperAdmin(user)) {
+      return forbidden('Only the superadmin can change roles, permissions, or verification status')
+    }
+
     // Prevent modifying superadmin by anyone else
-    if (id === SUPERADMIN_ID) {
+    if (targetId === SUPERADMIN_ID.toLowerCase()) {
       return NextResponse.json({ success: false, error: 'Cannot modify Superadmin' }, { status: 403 })
     }
 
@@ -28,7 +33,7 @@ export async function PUT(request, { params }) {
     }
 
     if (body.password) {
-      if (body.password.length < 6) return NextResponse.json({ success: false, error: 'Password too short' }, { status: 422 })
+      if (typeof body.password !== 'string' || body.password.length < 12) return NextResponse.json({ success: false, error: 'Password must be at least 12 characters' }, { status: 422 })
       patch.password = await bcrypt.hash(body.password, 10)
     }
 
@@ -44,9 +49,13 @@ export async function PUT(request, { params }) {
     }
 
     // MongoDB driver v5: findOneAndUpdate returns the document directly (not wrapped in .value)
+    const update = { $set: patch }
+    if (patch.password || patch.role || patch.permissions || patch.isVerified !== undefined) {
+      update.$inc = { sessionVersion: 1 }
+    }
     const updated = await db.collection('users').findOneAndUpdate(
       { _id: new ObjectId(id) },
-      { $set: patch },
+      update,
       { returnDocument: 'after', projection: { password: 0 } }
     )
 
@@ -73,12 +82,13 @@ export async function DELETE(request, { params }) {
 
     const { id } = await params
     if (!ObjectId.isValid(id)) return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 })
+    const targetId = new ObjectId(id).toString()
 
-    if (id === SUPERADMIN_ID) {
+    if (targetId === SUPERADMIN_ID.toLowerCase()) {
       return NextResponse.json({ success: false, error: 'Cannot delete Superadmin' }, { status: 403 })
     }
 
-    if (id === user._id.toString()) {
+    if (targetId === user._id.toString()) {
       return NextResponse.json({ success: false, error: 'Cannot delete yourself' }, { status: 400 })
     }
 

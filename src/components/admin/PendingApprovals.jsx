@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, X, Eye, MapPin, MessageSquare, RefreshCw, ExternalLink, Info, ChevronDown, ChevronUp, Clock, Landmark, Globe, Image as ImageIcon, Sparkles, Navigation } from 'lucide-react'
@@ -61,25 +61,29 @@ export function PendingApprovals({ compact = false }) {
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
+  const [reloadVersion, setReloadVersion] = useState(0)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const t = token || localStorage.getItem('auth_token')
-    try {
-      const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
-      if (res.status === 403) {
-        // No permission to view approvals — hide the component silently
-        setItems([])
-        setLoading(false)
-        return
+  useEffect(() => {
+    let active = true
+    const loadApprovals = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      try {
+        const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
+        if (res.status === 403) {
+          if (active) setItems([])
+          return
+        }
+        const d = await res.json()
+        if (active && d.success) setItems(d.data || [])
+      } catch {
+        if (active) toast.error('Failed to load approvals')
+      } finally {
+        if (active) setLoading(false)
       }
-      const d = await res.json()
-      if (d.success) setItems(d.data || [])
-    } catch { toast.error('Failed to load approvals') }
-    setLoading(false)
-  }, [token])
-
-  useEffect(() => { load() }, [load])
+    }
+    loadApprovals()
+    return () => { active = false }
+  }, [token, reloadVersion])
 
   const handleAction = async (itemId, type, action) => {
     setActing(itemId + action)
@@ -111,7 +115,7 @@ export function PendingApprovals({ compact = false }) {
           {!loading && <span className="ml-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-full">{items.length}</span>}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={load} className="p-1.5 rounded-lg text-neutral-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+          <button onClick={() => { setLoading(true); setReloadVersion(version => version + 1) }} className="p-1.5 rounded-lg text-neutral-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
             <RefreshCw size={14} />
           </button>
           {compact && items.length > 5 && (

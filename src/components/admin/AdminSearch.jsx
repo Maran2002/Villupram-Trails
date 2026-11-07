@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Loader2, MapPin, User, ArrowRight, X, MessageSquare, Layout } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,6 +13,21 @@ export function AdminSearch() {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const searchRef = useRef(null)
+
+  const handleSearch = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await apiClient.get(`/admin/search?q=${encodeURIComponent(query)}`)
+      if (data.success) {
+        setResults(data.data)
+        setIsOpen(true)
+      }
+    } catch (error) {
+      console.error('Search error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [query])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -33,22 +48,7 @@ export function AdminSearch() {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [query])
-
-  const handleSearch = async () => {
-    setLoading(true)
-    try {
-      const { data } = await apiClient.get(`/admin/search?q=${encodeURIComponent(query)}`)
-      if (data.success) {
-        setResults(data.data)
-        setIsOpen(true)
-      }
-    } catch (error) {
-      console.error('Search error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [query, handleSearch])
 
   const handleSelect = (href) => {
     router.push(href)
@@ -138,7 +138,7 @@ export function AdminSearch() {
             animate={{ opacity: 1, y: 0 }}
             className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-700 rounded-2xl shadow-xl p-8 text-center z-50"
           >
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No results found for "{query}"</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">No results found for &quot;{query}&quot;</p>
           </motion.div>
         )}
       </AnimatePresence>

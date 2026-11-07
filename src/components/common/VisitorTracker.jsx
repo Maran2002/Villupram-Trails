@@ -7,17 +7,14 @@ export default function VisitorTracker() {
   const pathname = usePathname()
 
   useEffect(() => {
-    // We only track in production or if needed, but for this task we'll track always
-    // except for admin pages to avoid polluting logs with admin actions
-    if (pathname.startsWith('/admin')) return
+    const privatePrefixes = ['/admin', '/auth', '/contribute', '/dashboard']
+    if (privatePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return
 
     const track = async () => {
       try {
         const data = {
           path: pathname,
-          userAgent: navigator.userAgent,
           referer: document.referrer,
-          screenSize: `${window.innerWidth}x${window.innerHeight}`,
           // Device and Browser detection could be more complex, keeping it simple
           device: window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop',
           browser: getBrowser(),
@@ -44,19 +41,19 @@ export default function VisitorTracker() {
 
 function getBrowser() {
   const ua = navigator.userAgent
+  if (ua.includes('Edg/')) return 'Edge'
   if (ua.includes('Chrome')) return 'Chrome'
   if (ua.includes('Firefox')) return 'Firefox'
   if (ua.includes('Safari')) return 'Safari'
-  if (ua.includes('Edge')) return 'Edge'
   return 'Other'
 }
 
 function getOS() {
   const ua = navigator.userAgent
+  if (ua.includes('Android')) return 'Android'
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS'
   if (ua.includes('Windows')) return 'Windows'
   if (ua.includes('Mac')) return 'macOS'
   if (ua.includes('Linux')) return 'Linux'
-  if (ua.includes('Android')) return 'Android'
-  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS'
   return 'Other'
 }

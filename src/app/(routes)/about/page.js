@@ -80,7 +80,7 @@ export default function AboutPage() {
           <motion.div variants={fadeUp} className="relative h-[500px] rounded-3xl overflow-hidden shadow-2xl group">
             <img src={cardImg.src} alt="Local culture" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             <div className="absolute inset-0 bg-gradient-to-t from-dark-900/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-8 left-8 right-8"><p className="text-white text-xl font-medium font-serif italic">"Preserving the past, inspiring the future."</p></div>
+            <div className="absolute bottom-8 left-8 right-8"><p className="text-white text-xl font-medium font-serif italic">&quot;Preserving the past, inspiring the future.&quot;</p></div>
           </motion.div>
         </motion.div>
       </section>
@@ -117,7 +117,7 @@ export default function AboutPage() {
         <motion.div className="max-w-5xl mx-auto text-center bg-dark-900 p-12 md:p-20 rounded-[3rem] relative overflow-hidden shadow-2xl" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
           <div className="relative z-10">
             <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white mb-6 leading-tight">Ready to Shape the <span className="italic text-primary-300">Narrative?</span></h2>
-            <p className="text-xl text-neutral-300 mb-10 max-w-2xl mx-auto font-light leading-relaxed">Join our elite community and help curate the definitive guide to {settings.siteName || 'Villupuram'}'s elegance.</p>
+            <p className="text-xl text-neutral-300 mb-10 max-w-2xl mx-auto font-light leading-relaxed">Join our community and help curate the definitive guide to {settings.siteName || 'Villupuram'}&apos;s cultural places.</p>
             <Link href={ctaLink}>
               <Button size="md" className="text-dark-900 cursor-pointer hover:bg-neutral-100 text-lg px-4 py-3 rounded-full group flex items-center gap-3 mx-auto">
                 {user ? (user.role === 'admin' ? 'Admin Dashboard' : 'Contribute Now') : 'Become a Contributor'}

@@ -10,13 +10,33 @@ export async function GET(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'reports', 'view')) return forbidden()
 
-    const db = await getDb()
-    const reports = await db.collection('reports')
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray()
+    const { searchParams } = new URL(request.url)
+    const requestedPage = Number.parseInt(searchParams.get('page') || '1', 10)
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '20', 10)
+    const page = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1
+    const limit = Number.isFinite(requestedLimit) ? Math.min(50, Math.max(1, requestedLimit)) : 20
+    const status = searchParams.get('status')
+    const search = (searchParams.get('search') || '').trim().slice(0, 100)
+    const query = {}
+    if (['pending', 'open', 'closed'].includes(status)) query.status = status
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      query.$or = ['reporterName', 'reporterEmail', 'type', 'reason', 'description', 'targetId']
+        .map((field) => ({ [field]: { $regex: escaped, $options: 'i' } }))
+    }
 
-    return NextResponse.json({ success: true, data: reports })
+    const db = await getDb()
+    const collection = db.collection('reports')
+    const [reports, total] = await Promise.all([
+      collection.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
+      collection.countDocuments(query),
+    ])
+
+    return NextResponse.json({
+      success: true,
+      data: reports,
+      meta: { total, page, limit, pages: Math.ceil(total / limit) },
+    })
   } catch (error) {
     console.error('Fetch admin reports error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
@@ -30,10 +50,20 @@ export async function PATCH(request) {
     if (!hasPermission(user, 'reports', 'edit')) return forbidden()
 
     const body = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 })
+    }
     const { id, status, actionTaken, actionReason } = body
 
     if (!id || !status) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
+    }
+    if (!ObjectId.isValid(id) || !['pending', 'open', 'closed'].includes(status)) {
+      return NextResponse.json({ success: false, error: 'Invalid report ID or status' }, { status: 400 })
+    }
+    if ((actionTaken !== undefined && (typeof actionTaken !== 'string' || actionTaken.length > 500))
+      || (actionReason !== undefined && (typeof actionReason !== 'string' || actionReason.length > 2000))) {
+      return NextResponse.json({ success: false, error: 'Action text is too long or invalid' }, { status: 400 })
     }
 
     const db = await getDb()
@@ -42,8 +72,8 @@ export async function PATCH(request) {
       { 
         $set: { 
           status, 
-          actionTaken, 
-          actionReason,
+          actionTaken: typeof actionTaken === 'string' ? actionTaken.trim() : '',
+          actionReason: typeof actionReason === 'string' ? actionReason.trim() : '',
           updatedAt: new Date()
         } 
       }
@@ -60,7 +90,7 @@ export async function PATCH(request) {
       action: 'report.update',
       target: 'report',
       targetId: id,
-      meta: { status, actionTaken }
+      meta: { status, actionTaken: typeof actionTaken === 'string' ? actionTaken.trim() : '' }
     })
 
     return NextResponse.json({ success: true })

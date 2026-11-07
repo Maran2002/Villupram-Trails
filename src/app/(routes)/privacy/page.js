@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           </div>
           <h1 className="font-serif text-4xl md:text-5xl text-neutral-900 dark:text-white mb-6">Privacy Policy</h1>
           <p className="text-lg text-neutral-600 dark:text-neutral-400">
-            Last updated: May 10, 2026
+            Last updated: November 7, 2026
           </p>
         </motion.div>
       </section>
@@ -31,42 +31,36 @@ export default function PrivacyPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h2>1. Introduction</h2>
-          <p>Welcome to Villupuram Discovery Hub. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.</p>
+          <p>This notice describes data handled by the current application. The operator should review its legal identity and applicable privacy obligations before production. Privacy requests can currently be submitted through the Contact form.</p>
 
           <h2>2. The Data We Collect About You</h2>
-          <p>We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:</p>
+          <p>Depending on how you use the site, the application stores:</p>
           <ul>
-            <li><strong>Identity Data:</strong> includes first name, last name, username or similar identifier.</li>
-            <li><strong>Contact Data:</strong> includes email address and telephone numbers.</li>
-            <li><strong>Technical Data:</strong> includes internet protocol (IP) address, your login data, browser type and version, time zone setting and location.</li>
-            <li><strong>Profile Data:</strong> includes your username and password, contributions made by you, your interests, preferences, and feedback.</li>
+            <li><strong>Account data:</strong> username, email address, password hash, role, verification, and permission settings.</li>
+            <li><strong>Community and contact data:</strong> places, reviews, moderation state, reports, support messages, and email addresses submitted through the updates form.</li>
+            <li><strong>Page-view data:</strong> new records contain public-page paths without query strings, referrer origin, and coarse device/browser/operating-system labels. Admin, authentication, contribution, and dashboard paths are excluded. New records omit raw user-agent strings, screen dimensions, and IP addresses. Older visitor records may retain user-agent strings, screen dimensions, and an `ip` field that came from browser-submitted data; those records need review and cleanup. Hosting infrastructure may maintain separate logs.</li>
+            <li><strong>Session data:</strong> an authentication cookie used to keep you signed in. It is HttpOnly and SameSite=Lax, and Secure in production.</li>
           </ul>
 
           <h2>3. How We Use Your Personal Data</h2>
-          <p>We will only use your personal data when the law allows us to. Most commonly, we will use your personal data in the following circumstances:</p>
+          <p>The application uses account data to authenticate users, apply permissions, and associate contributions with their authors. It uses community content for moderation and support workflows, submitted updates-list emails for administrator reference, and page-view records for aggregate traffic counts. Automated newsletter emails are not sent.</p>
           <ul>
-            <li>Where we need to perform the contract we are about to enter into or have entered into with you (e.g., creating an account).</li>
-            <li>Where it is necessary for our legitimate interests (or those of a third party) and your interests and fundamental rights do not override those interests.</li>
-            <li>Where we need to comply with a legal or regulatory obligation.</li>
+            <li>Records are stored in the configured MongoDB database and may be processed by the hosting and database providers selected by the operator.</li>
+            <li>Visitor page-view records are scheduled for automatic deletion after 90 days. Closed support tickets and reports are scheduled for deletion 365 days after their last status update to closed. Audit logs are scheduled for deletion after 365 days.</li>
+            <li>Newsletter addresses do not expire automatically; they remain stored until an operator removes them. Account, place, review, and other records do not have a general automatic retention schedule.</li>
           </ul>
 
           <h2>4. Data Security</h2>
-          <p>We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used, or accessed in an unauthorized way, altered, or disclosed. In addition, we limit access to your personal data to those employees, agents, contractors, and other third parties who have a business need to know.</p>
+          <p>The application hashes passwords and uses an HttpOnly session cookie. Access to administrative data is permission checked by server routes. Deployment, database, backup, and provider controls depend on operator configuration and must be reviewed before production.</p>
 
           <h2>5. Data Retention</h2>
-          <p>We will only retain your personal data for as long as necessary to fulfil the purposes we collected it for, including for the purposes of satisfying any legal, accounting, or reporting requirements.</p>
+          <p>MongoDB performs scheduled expiry asynchronously, so deletion may occur after the stated period rather than at an exact time. Existing visitor records may retain older fields until they expire. Account and contribution deletion requests require manual review.</p>
 
-          <h2>6. Your Legal Rights</h2>
-          <p>Under certain circumstances, you have rights under data protection laws in relation to your personal data. These include the right to:</p>
-          <ul>
-            <li>Request access to your personal data.</li>
-            <li>Request correction of your personal data.</li>
-            <li>Request erasure of your personal data.</li>
-            <li>Object to processing of your personal data.</li>
-          </ul>
+          <h2>6. Requests and Support</h2>
+          <p>For privacy questions or requests about account and contribution data, use the <a href="/contact">contact form</a>. It records a support ticket for administrator review; it does not automatically delete records or send an email reply.</p>
 
           <h2>7. Contact Us</h2>
-          <p>If you have any questions about this privacy policy or our privacy practices, please contact us using the support form provided on our FAQ page.</p>
+          <p>The contact form is the current privacy request channel. Please do not include passwords or sensitive identity documents in a message.</p>
         </motion.div>
       </section>
     </div>

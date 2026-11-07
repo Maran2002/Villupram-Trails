@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { 
   MessageSquare, Search, RefreshCw, ChevronLeft, ChevronRight, 
@@ -23,6 +23,7 @@ export default function AdminReviewsPage() {
   const [editForm, setEditForm] = useState({ comment: '', rating: 5, visible: true })
   const [deleting, setDeleting] = useState(null)
   const LIMIT = 15
+  const searchRef = useRef(search)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -42,12 +43,36 @@ export default function AdminReviewsPage() {
     setLoading(false)
   }, [token, search, visible])
 
-  useEffect(() => { setPage(1); load(1) }, [token, visible])
+  useEffect(() => {
+    let active = true
+    const loadReviews = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      const params = new URLSearchParams({ page: 1, limit: LIMIT })
+      if (searchRef.current) params.set('search', searchRef.current)
+      if (visible) params.set('visible', visible)
+      try {
+        const res = await fetch(`/api/admin/reviews?${params}`, { headers: { Authorization: `Bearer ${t}` } })
+        const d = await res.json()
+        if (active && d.success) {
+          setReviews(d.data.reviews || [])
+          setTotal(d.data.total || 0)
+        }
+      } catch {
+        if (active) toast.error('Failed to load reviews')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    loadReviews()
+    return () => { active = false }
+  }, [token, visible])
+
+  useEffect(() => { searchRef.current = search }, [search])
 
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); load(1) }, 400)
     return () => clearTimeout(t)
-  }, [search])
+  }, [search, load])
 
   const handleDelete = async (id, author) => {
     if (!confirm(`Delete review by "${author}"?`)) return
@@ -109,7 +134,7 @@ export default function AdminReviewsPage() {
           </div>
           <div className="flex gap-2">
             {['', 'true', 'false'].map(v => (
-              <button key={v} onClick={() => setVisible(v)}
+              <button key={v} onClick={() => { setPage(1); setLoading(true); setVisible(v) }}
                 className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-colors ${
                   visible === v
                     ? 'bg-primary-500 text-white border-primary-500'

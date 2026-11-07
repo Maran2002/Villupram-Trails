@@ -9,6 +9,18 @@ export function PlaceCarousel({ images, name }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [zoom, setZoom] = useState(1)
+  const imageCount = images?.length || 0
+
+  useEffect(() => {
+    if (!isFullscreen || !imageCount) return
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowRight') setCurrentIndex((index) => (index + 1) % imageCount)
+      if (event.key === 'ArrowLeft') setCurrentIndex((index) => (index - 1 + imageCount) % imageCount)
+      if (event.key === 'Escape') { setIsFullscreen(false); setZoom(1) }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen, imageCount])
 
   if (!images || images.length === 0) {
     return (
@@ -24,95 +36,64 @@ export function PlaceCarousel({ images, name }) {
   const next = () => setCurrentIndex((prev) => (prev + 1) % images.length)
   const prev = () => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (isFullscreen) {
-        if (e.key === 'ArrowRight') next()
-        if (e.key === 'ArrowLeft') prev()
-        if (e.key === 'Escape') { setIsFullscreen(false); setZoom(1) }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isFullscreen])
-
   return (
     <div className="relative group">
-      {/* Main Display */}
-      <div className="relative h-72 sm:h-[450px] rounded-2xl overflow-hidden bg-neutral-900 shadow-xl border border-neutral-200 dark:border-dark-700">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+      {/* Grid Display */}
+      <div className={`grid gap-1.5 sm:gap-2 h-[350px] sm:h-[450px] rounded-2xl overflow-hidden border border-neutral-200 dark:border-dark-700 shadow-sm ${
+        images.length >= 3 ? 'grid-cols-2 sm:grid-cols-3 grid-rows-2' :
+        images.length === 2 ? 'grid-cols-2 grid-rows-1' :
+        'grid-cols-1 grid-rows-1'
+      }`}>
+        {/* Large Image */}
+        <div
+          className={`relative ${images.length >= 3 ? 'col-span-2 sm:col-span-2 row-span-1 sm:row-span-2' : 'col-span-1 row-span-1'} h-full cursor-pointer group/img overflow-hidden`}
+          onClick={() => { setCurrentIndex(0); setIsFullscreen(true); }}
+        >
+          <PlaceImage src={images[0]} alt={`${name} - 1`} fill className="object-cover group-hover/img:scale-105 transition-transform duration-700" priority sizes="(max-width: 1200px) 100vw, 800px" />
+          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
+          {images.length === 1 && (
+            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm text-neutral-900 px-3 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Maximize2 size={16} /> View Fullscreen
+            </div>
+          )}
+        </div>
+
+        {/* Small Image 1 */}
+        {images.length >= 2 && (
+          <div
+            className="relative col-span-1 row-span-1 h-full cursor-pointer group/img overflow-hidden"
+            onClick={() => { setCurrentIndex(1); setIsFullscreen(true); }}
           >
-            <PlaceImage
-              src={images[currentIndex]}
-              alt={`${name} - ${currentIndex + 1}`}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 1200px) 100vw, 1200px"
-            />
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-
-        {/* Controls */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={(e) => { e.preventDefault(); prev() }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={(e) => { e.preventDefault(); next() }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </>
+            <PlaceImage src={images[1]} alt={`${name} - 2`} fill className="object-cover group-hover/img:scale-105 transition-transform duration-700" sizes="(max-width: 768px) 50vw, 33vw" />
+            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
+            {images.length === 2 && (
+               <div className="absolute inset-0 bg-black/20 group-hover/img:bg-black/30 transition-colors flex items-center justify-center">
+                 <span className="bg-white/90 backdrop-blur-sm text-neutral-900 px-4 py-2 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2">
+                   <Maximize2 size={16} /> View Gallery
+                 </span>
+               </div>
+            )}
+          </div>
         )}
 
-        {/* Fullscreen Trigger */}
-        <button
-          onClick={() => setIsFullscreen(true)}
-          className="absolute bottom-4 right-4 p-2.5 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all flex items-center gap-2 text-xs font-bold"
-        >
-          <Maximize2 size={16} />
-          <span>VIEW FULLSCREEN</span>
-        </button>
+        {/* Small Image 2 */}
+        {images.length >= 3 && (
+          <div
+            className="relative col-span-1 row-span-1 h-full cursor-pointer group/img overflow-hidden"
+            onClick={() => { setCurrentIndex(2); setIsFullscreen(true); }}
+          >
+            <PlaceImage src={images[2]} alt={`${name} - 3`} fill className="object-cover group-hover/img:scale-105 transition-transform duration-700" sizes="(max-width: 768px) 50vw, 33vw" />
+            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors pointer-events-none" />
 
-        {/* Counter */}
-        <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-bold tracking-widest">
-          {currentIndex + 1} / {images.length}
-        </div>
+            {images.length > 3 && (
+              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center transition-colors group-hover/img:bg-black/60">
+                <span className="text-white font-serif font-bold text-3xl">+{images.length - 3}</span>
+                <span className="text-white/90 text-xs font-bold uppercase tracking-widest mt-1">More Photos</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-2 hide-scrollbar">
-          {images.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIndex(i)}
-              className={`relative w-20 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                currentIndex === i ? 'border-primary-500 scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
-              }`}
-            >
-              <PlaceImage src={img} alt="" fill className="object-cover" sizes="80px" />
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Fullscreen Lightbox Modal */}
       <AnimatePresence>
@@ -130,7 +111,7 @@ export function PlaceCarousel({ images, name }) {
                 <p className="text-xs text-neutral-400">Photo {currentIndex + 1} of {images.length}</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-white/10 rounded-xl p-1 backdrop-blur-md">
+                <div className="flex items-center bg-white/10 rounded-xl p-1 backdrop-blur-md hidden sm:flex">
                   <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 hover:bg-white/20 rounded-lg text-white transition-colors">
                     <ZoomOut size={18} />
                   </button>
@@ -160,7 +141,7 @@ export function PlaceCarousel({ images, name }) {
                 dragElastic={0.1}
                 animate={{ scale: zoom }}
                 transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-                className="relative w-[90vw] h-[70vh] flex items-center justify-center"
+                className="relative w-[100vw] sm:w-[90vw] h-[70vh] flex items-center justify-center"
               >
                 <PlaceImage
                   src={images[currentIndex]}
@@ -175,27 +156,27 @@ export function PlaceCarousel({ images, name }) {
                 <>
                   <button
                     onClick={(e) => { e.stopPropagation(); prev() }}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl transition-all"
+                    className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl transition-all"
                   >
-                    <ChevronLeft size={32} />
+                    <ChevronLeft size={24} className="sm:w-8 sm:h-8" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); next() }}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl transition-all"
+                    className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl transition-all"
                   >
-                    <ChevronRight size={32} />
+                    <ChevronRight size={24} className="sm:w-8 sm:h-8" />
                   </button>
                 </>
               )}
             </div>
 
             {/* Modal Bottom Thumbs */}
-            <div className="absolute bottom-6 flex gap-2 max-w-[80vw] overflow-x-auto p-2 hide-scrollbar bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
+            <div className="absolute bottom-6 flex gap-2 max-w-[90vw] sm:max-w-[80vw] overflow-x-auto p-2 hide-scrollbar bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
               {images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentIndex(i)}
-                  className={`relative w-16 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                  className={`relative w-14 h-10 sm:w-16 sm:h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
                     currentIndex === i ? 'border-primary-500 scale-110' : 'border-transparent opacity-40 hover:opacity-100'
                   }`}
                 >

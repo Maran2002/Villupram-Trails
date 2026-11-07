@@ -39,30 +39,29 @@ export default function AdminSettingsPage() {
   const logoInputRef = useRef(null)
 
   useEffect(() => {
-    fetchSettings()
-  }, [])
+    let active = true
 
-  const fetchSettings = async () => {
-    try {
-      // Using axios apiClient which has the 401 interceptor
-      const { data } = await apiClient.get('/admin/settings')
-      if (data.success) {
-        setForm(data.data)
+    const loadSettings = async () => {
+      try {
+        const { data } = await apiClient.get('/admin/settings')
+        if (active && data.success) setForm(data.data)
+      } catch (err) {
+        if (active && err.code !== 401) toast.error(err.message || 'Failed to load settings')
+      } finally {
+        if (active) setLoading(false)
       }
-    } catch (err) {
-      if (err.code === 401) return // Interceptor handles redirect
-      toast.error(err.message || 'Failed to load settings')
-    } finally {
-      setLoading(false)
     }
-  }
+
+    loadSettings()
+    return () => { active = false }
+  }, [])
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     const loadingToast = toast.loading('Processing logo...')
     try {
-      const result = await compressToBase64(file, { maxWidth: 300, quality: 0.8 })
+      const result = await compressToBase64(file, { maxWidth: 300, format: 'image/png' })
       setForm(prev => ({ ...prev, siteLogo: result.dataUrl }))
       toast.success('Logo ready!', { id: loadingToast })
     } catch (err) {
@@ -210,7 +209,7 @@ export default function AdminSettingsPage() {
                 <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-dark-900 rounded-2xl border border-neutral-100 dark:border-dark-700">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-neutral-900 dark:text-white">Require Approval for New Places</p>
-                    <p className="text-xs text-neutral-500">If enabled, places added by users will start as "Pending" and require admin approval.</p>
+                    <p className="text-xs text-neutral-500">If enabled, places added by users will start as &quot;Pending&quot; and require admin approval.</p>
                   </div>
                   <button 
                     type="button"

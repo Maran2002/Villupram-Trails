@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
-import { verifyToken, getAuthUser, unauthorized, writeAudit } from '@/lib/auth'
+import { getAuthUser, unauthorized, writeAudit } from '@/lib/auth'
 import { buildPlaceDoc, VALID_CATEGORIES } from '@/lib/schemas'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
@@ -15,11 +16,13 @@ export async function GET(request) {
     const trending = searchParams.get('trending')
 
     const db      = await getDb()
-    const decoded = verifyToken(request)
+    let user = null
+    try { user = await getAuthUser(request) } catch {}
 
     const query = {}
     // Non-admins only see Approved places
-    if (!decoded || decoded.role !== 'admin') query.status = 'Approved'
+    const canReviewAll = hasPermission(user, 'places', 'view')
+    if (!canReviewAll) query.status = 'Approved'
 
     if (category && category !== 'all' && VALID_CATEGORIES.includes(category)) {
       query.category = category
@@ -28,9 +31,11 @@ export async function GET(request) {
     if (trending === 'true') query.isTrending = true
 
     if (search) {
+      const safeSearch = search.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$or = [
-        { name:        { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
+        { name:        { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
+        { category:    { $regex: safeSearch, $options: 'i' } },
       ]
     }
     // Filter by open day
@@ -54,6 +59,7 @@ export async function POST(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
+    if (user.role === 'admin' && !hasPermission(user, 'places', 'add')) return NextResponse.json({ success: false, error: 'You do not have permission to add places' }, { status: 403 })
 
     const db     = await getDb()
     const settings = await db.collection('settings').findOne({ _id: 'site_config' })
@@ -72,6 +78,10 @@ export async function POST(request) {
 
     if (errors.length) {
       return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 422 })
+    }
+    if (user.role === 'admin' && hasPermission(user, 'places', 'edit')) {
+      doc.isTrending = body.isTrending === true
+      doc.isFeatured = body.isFeatured === true
     }
 
     const result = await db.collection('places').insertOne(doc)

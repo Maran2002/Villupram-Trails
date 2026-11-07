@@ -1,16 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { Moon, Sun, Menu, X, MapPin, ChevronDown, LayoutDashboard, LogOut, User, Flag } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore, useSettingsStore } from '@/lib/store'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 
 export function Header() {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -22,7 +27,6 @@ export function Header() {
   const { settings } = useSettingsStore()
 
   useEffect(() => {
-    setMounted(true)
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -71,7 +75,7 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="group flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/20 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-300 overflow-hidden">
               {settings.siteLogo ? (
                 <img src={settings.siteLogo} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -79,7 +83,7 @@ export function Header() {
               )}
             </div>
             <span className="font-serif text-2xl font-bold text-primary-600 dark:text-primary-400 transition-colors">
-              {settings.siteName || 'Villupuram'} <span className="text-neutral-800 dark:text-white font-light italic">Hub</span>
+              {settings.siteName || 'Villupuram'}
             </span>
           </Link>
 
@@ -94,7 +98,7 @@ export function Header() {
                   className={`relative font-medium text-sm transition-colors ${
                     isActive
                       ? 'text-primary-500'
-                      : `${navTextBase} hover:text-primary-500`
+                      : `${navTextBase} text-primary-500`
                   }`}
                 >
                   {link.name}
@@ -113,6 +117,7 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
+            <NotificationCenter />
             <button
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               className="p-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-neutral-700 dark:text-neutral-300 transition-all duration-300"
@@ -180,6 +185,7 @@ export function Header() {
           </div>
 
           <div className="md:hidden flex items-center gap-3">
+            <NotificationCenter />
             <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-full bg-neutral-100 dark:bg-dark-800 text-neutral-700 dark:text-neutral-300">
               {mounted ? (resolvedTheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />) : <div className="w-[18px] h-[18px]" />}
             </button>

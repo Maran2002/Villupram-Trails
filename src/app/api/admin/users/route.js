@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, hasPermission, writeAudit } from '@/lib/auth'
 import { buildUserDoc } from '@/lib/schemas'
+import { isSuperAdmin } from '@/lib/permissions'
 import bcrypt from 'bcryptjs'
 
 // GET /api/admin/users — admin only, paginated, searchable
@@ -9,7 +10,9 @@ export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (!hasPermission(user, 'users', 'view')) return forbidden()
+    const canViewUsers = hasPermission(user, 'users', 'view')
+    const canViewContributors = hasPermission(user, 'contributors', 'view')
+    if (!canViewUsers && !canViewContributors) return forbidden()
 
     const { searchParams } = new URL(request.url)
     const page   = Math.max(1, parseInt(searchParams.get('page'))  || 1)
@@ -19,12 +22,13 @@ export async function GET(request) {
 
     const db    = await getDb()
     const query = { _id: { $ne: user._id } } // Filter out the currently logged-in admin
+    if (!canViewUsers) query.role = 'user'
 
     if (search) query.$or = [
-      { username: { $regex: search, $options: 'i' } },
-      { email:    { $regex: search, $options: 'i' } },
+      { username: { $regex: search.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+      { email:    { $regex: search.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
     ]
-    if (role === 'user' || role === 'admin') query.role = role
+    if (canViewUsers && (role === 'user' || role === 'admin')) query.role = role
 
     const [users, total] = await Promise.all([
       db.collection('users')
@@ -55,8 +59,12 @@ export async function POST(request) {
     const body = await request.json()
     const { email, password, username, role, permissions } = body
 
-    if (!password || password.length < 6) {
-      return NextResponse.json({ success: false, error: 'Password must be at least 6 characters' }, { status: 422 })
+    if ((role === 'admin' || permissions !== undefined) && !isSuperAdmin(user)) {
+      return forbidden('Only the superadmin can create administrators or grant permissions')
+    }
+
+    if (typeof password !== 'string' || password.length < 12) {
+      return NextResponse.json({ success: false, error: 'Password must be at least 12 characters' }, { status: 422 })
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)

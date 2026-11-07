@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useCallback } from 'react'
+import { use, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -10,16 +10,17 @@ import {
 import { usePlace } from '@/lib/hooks/usePlaces'
 import { PlaceReviews } from '@/components/place/PlaceReviews'
 import { PlaceCarousel } from '@/components/place/PlaceCarousel'
-import { getEmbedMapUrl, getExternalMapUrl } from '@/lib/maps'
+import { getStaticMapUrl, getExternalMapUrl } from '@/lib/maps'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '@/lib/store'
 
-const TABS = ['Overview', 'Reviews', 'Nearby Routes', 'Directions']
+const TABS = ['Overview', 'Reviews', 'Directions']
 
 /* ─── Split Gallery ─────────────────────────────────────── */
 
 
 /* ─── Plan Your Visit sidebar ───────────────────────────── */
-function PlanYourVisit({ place }) {
+function PlanYourVisit({ place, isSaved, saving, onToggleSave }) {
   const hasCoords = place?.location?.lat && place?.location?.lng
   const mapUrl = getExternalMapUrl(place?.name, place?.location)
 
@@ -31,40 +32,40 @@ function PlanYourVisit({ place }) {
           <Calendar size={16} className="text-primary-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-neutral-800 dark:text-neutral-200">Best Time to Visit</p>
-            <p className="text-neutral-500 dark:text-neutral-400">{place?.bestTime || 'November to February'}</p>
+            <p className="text-neutral-500 dark:text-neutral-400">{place?.bestTime || 'Not provided'}</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Lightbulb size={16} className="text-primary-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-neutral-800 dark:text-neutral-200">Practical Tips</p>
-            <p className="text-neutral-500 dark:text-neutral-400">{place?.tips || 'Wear sturdy shoes. Carry water.'}</p>
+            <p className="text-neutral-500 dark:text-neutral-400">{place?.tips || 'Not provided'}</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Accessibility size={16} className="text-primary-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-neutral-800 dark:text-neutral-200">Accessibility</p>
-            <p className="text-neutral-500 dark:text-neutral-400">{place?.accessibility || 'Limited wheelchair access'}</p>
+            <p className="text-neutral-500 dark:text-neutral-400">{place?.accessibility || 'Not provided'}</p>
           </div>
         </div>
       </div>
 
-      <button onClick={() => toast.success('Saved to your itinerary!')} className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-700 dark:hover:bg-white text-white dark:text-neutral-900 text-sm font-semibold rounded-xl transition-colors">
-        <Bookmark size={15} /> Save to Itinerary
+      <button onClick={onToggleSave} disabled={saving} aria-pressed={isSaved} className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-700 dark:hover:bg-white text-white dark:text-neutral-900 text-sm font-semibold rounded-xl transition-colors disabled:opacity-60">
+        <Bookmark size={15} className={isSaved ? 'fill-current' : ''} /> {isSaved ? 'Saved place' : 'Save place'}
       </button>
 
       {/* Map view */}
       <div className="mt-4 group h-36 bg-neutral-100 dark:bg-dark-700 rounded-xl relative overflow-hidden border border-neutral-200 dark:border-dark-600">
         {hasCoords ? (
-          <iframe
-            title="Map"
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            style={{ border: 0, filter: 'grayscale(0.2) contrast(1.1)' }}
-            src={getEmbedMapUrl(place?.location)}
-            allowFullScreen
+          <img
+            title="Map preview"
+            alt={`Map preview for ${place?.name || 'this place'}`}
+            width="600"
+            height="300"
+            style={{ filter: 'grayscale(0.2) contrast(1.1)' }}
+            className="w-full h-full object-cover"
+            src={getStaticMapUrl(place?.location?.lat, place?.location?.lng)}
           />
         ) : (
           <div className="h-full flex flex-col items-center justify-center p-4 text-center">
@@ -82,7 +83,7 @@ function PlanYourVisit({ place }) {
           <ExternalLink size={10} /> VIEW LARGE MAP
         </a>
       </div>
-      <p className="text-[10px] text-neutral-400 text-center mt-2 font-medium">Located in {place?.location?.address?.split(',').slice(-2).join(',') || 'Villupuram, Tamil Nadu'}</p>
+      <p className="text-[10px] text-neutral-400 text-center mt-2 font-medium">Located in {place?.location?.address?.split(',').slice(-2).join(',') || 'Location not provided'}</p>
     </div>
   )
 }
@@ -98,9 +99,7 @@ function InfoCards({ place }) {
           </div>
           <h4 className="font-semibold text-neutral-900 dark:text-white text-sm">Opening Hours</h4>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">{place?.openingHours || 'Open Daily'}</p>
-        <p className="text-xs font-medium text-primary-600 dark:text-primary-400 mt-1">{place?.timing || '9:00 AM – 5:30 PM'}</p>
-        <p className="text-xs text-neutral-400 mt-1">Last entry 30 min before close</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">{place?.openingHours || place?.visitingHours || 'Not provided'}</p>
       </div>
       <div className="border border-neutral-200 dark:border-dark-700 rounded-2xl p-5 bg-white dark:bg-dark-800">
         <div className="flex items-center gap-2 mb-3">
@@ -112,11 +111,7 @@ function InfoCards({ place }) {
         {place?.entryFee ? (
           <p className="text-sm text-neutral-600 dark:text-neutral-400">{place.entryFee}</p>
         ) : (
-          <div className="space-y-1 text-sm text-neutral-600 dark:text-neutral-400">
-            <div className="flex justify-between"><span>Indian Citizens</span><span className="font-medium text-neutral-900 dark:text-white">₹ 25</span></div>
-            <div className="flex justify-between"><span>Foreign Nationals</span><span className="font-medium text-neutral-900 dark:text-white">₹ 250</span></div>
-            <div className="flex justify-between"><span>Still Camera</span><span className="font-medium text-neutral-900 dark:text-white">₹ 25</span></div>
-          </div>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Not provided</p>
         )}
       </div>
     </div>
@@ -127,7 +122,63 @@ function InfoCards({ place }) {
 export default function PlaceDetail({ params }) {
   const { placeId } = use(params)
   const { data: place, loading, error } = usePlace(placeId)
+  const user = useAuthStore((state) => state.user)
+  const userId = user?._id?.toString()
   const [activeTab, setActiveTab] = useState('Overview')
+  const [savedPlace, setSavedPlace] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const isSaved = savedPlace?.userId === userId && savedPlace?.saved === true
+
+  useEffect(() => {
+    if (!userId) return
+    fetch(`/api/user/favorites?placeId=${encodeURIComponent(placeId)}`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => { if (result?.success) setSavedPlace({ userId, saved: result.data.saved }) })
+      .catch(() => {})
+  }, [userId, placeId])
+
+  const handleSave = async () => {
+    if (!user) {
+      toast.error('Sign in to save places')
+      return
+    }
+    if (saving) return
+    setSaving(true)
+    try {
+      const response = await fetch(isSaved ? `/api/user/favorites?placeId=${encodeURIComponent(placeId)}` : '/api/user/favorites', {
+        method: isSaved ? 'DELETE' : 'PUT',
+        headers: isSaved ? undefined : { 'Content-Type': 'application/json' },
+        body: isSaved ? undefined : JSON.stringify({ placeId }),
+      })
+      const result = await response.json()
+      if (!response.ok || !result.success) throw new Error(result.error || 'Could not update saved places')
+      setSavedPlace({ userId, saved: result.data.saved })
+      toast.success(result.data.saved ? 'Place saved' : 'Place removed from saved places')
+    } catch (requestError) {
+      toast.error(requestError.message || 'Could not update saved places')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleShare = () => {
+    if (!place) return
+    const shareData = {
+      title: `${place.name} | Villupuram Discovery Hub`,
+      text: `Check out ${place.name} in Villupuram!`,
+      url: window.location.href,
+    }
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(() => {})
+    } else if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => toast.success('Link copied to clipboard!'))
+        .catch(() => toast.error('Could not copy the link'))
+    } else {
+      toast.error('Sharing is unavailable in this browser')
+    }
+  }
 
   if (loading) return (
     <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 pt-32">
@@ -148,25 +199,6 @@ export default function PlaceDetail({ params }) {
   )
 
   const reviewCount = place.reviewCount || 0
-
-  const handleShare = useCallback(() => {
-    const shareData = {
-      title: `${place.name} | Villupuram Discovery Hub`,
-      text: `Check out ${place.name} in Villupuram!`,
-      url: window.location.href,
-    }
-
-    if (navigator.share) {
-      navigator.share(shareData).catch(() => {})
-    } else {
-      navigator.clipboard.writeText(window.location.href)
-      toast.success('Link copied to clipboard!')
-    }
-  }, [place])
-
-  const handleSave = () => {
-    toast.success('Added to your bookmarks!')
-  }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-dark-900">
@@ -234,8 +266,8 @@ export default function PlaceDetail({ params }) {
             <button onClick={handleShare} className="p-2 rounded-lg text-neutral-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors" title="Share">
               <Share2 size={16} />
             </button>
-            <button onClick={handleSave} className="p-2 rounded-lg text-neutral-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors" title="Save">
-              <Bookmark size={16} />
+            <button onClick={handleSave} disabled={saving} aria-label={isSaved ? 'Remove saved place' : 'Save place'} aria-pressed={isSaved} className="p-2 rounded-lg text-neutral-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50">
+              <Bookmark size={16} className={isSaved ? 'fill-current text-primary-500' : ''} />
             </button>
           </div>
         </motion.div>
@@ -274,10 +306,12 @@ export default function PlaceDetail({ params }) {
               </div>
             )}
 
-            {(activeTab === 'Nearby Routes' || activeTab === 'Directions') && (
+            {activeTab === 'Directions' && (
               <div className="py-16 text-center">
-                <p className="text-4xl mb-3">🗺️</p>
-                <p className="text-neutral-500 dark:text-neutral-400 font-medium">{activeTab} coming soon.</p>
+                <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">Open directions for {place.name} in Google Maps.</p>
+                <a href={getExternalMapUrl(place.name, place.location)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-white font-semibold hover:bg-primary-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500">
+                  <ExternalLink size={16} /> Get directions
+                </a>
               </div>
             )}
 
@@ -300,7 +334,7 @@ export default function PlaceDetail({ params }) {
 
           {/* ── Right sidebar ── */}
           <div className="lg:col-span-1">
-            <PlanYourVisit place={place} />
+            <PlanYourVisit place={place} isSaved={isSaved} saving={saving} onToggleSave={handleSave} />
           </div>
         </motion.div>
       </div>

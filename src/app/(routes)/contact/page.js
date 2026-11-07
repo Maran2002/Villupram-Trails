@@ -27,8 +27,7 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      formData.topic = "From Contact Page"
-      await apiClient.post('/support', formData)
+      await apiClient.post('/support', { ...formData, topic: 'From Contact Page' })
       setSubmitted(true)
     } catch (error) {
       console.error('Submission failed:', error)
@@ -138,7 +137,7 @@ export default function ContactPage() {
                 </div>
                 <h2 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white">Message Received</h2>
                 <p className="text-neutral-600 dark:text-neutral-400 max-w-md">
-                  Thank you for reaching out. A member of our team will contact you shortly via email.
+                  Your message has been saved to the community support queue. This site does not currently send automatic email replies.
                 </p>
                 <Button onClick={() => setSubmitted(false)} variant="outline">Send Another Message</Button>
               </div>

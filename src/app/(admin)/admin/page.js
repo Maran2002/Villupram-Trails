@@ -69,7 +69,7 @@ export default function AdminOverviewPage() {
           Welcome back{user?.username ? `, ${user.username}` : ''}.
         </h2>
         <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-          Here is a live overview of the platform's health and activity.
+          Here is a live overview of the platform&apos;s health and activity.
         </p>
       </div>
 

@@ -5,8 +5,9 @@ import { useAuthStore } from '@/lib/store'
 import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Plus, X, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Perm } from './WithPermission'
+import { isSuperAdmin } from '@/lib/permissions'
 
-const MODULES = ['places', 'reviews', 'users', 'audit', 'reports', 'settings', 'contributors', 'logs', 'approvals']
+const MODULES = ['places', 'reviews', 'users', 'audit', 'reports', 'settings', 'contributors', 'logs', 'approvals', 'support', 'newsletter', 'search']
 
 export function AdminUsersTable() {
   const token = useAuthStore((s) => s.token)
@@ -36,12 +37,15 @@ export function AdminUsersTable() {
     setLoading(false)
   }, [token, search, roleTab])
 
-  useEffect(() => { load(1, '', roleTab) }, [token, roleTab])
+  useEffect(() => {
+    const timer = setTimeout(() => load(1, '', roleTab), 0)
+    return () => clearTimeout(timer)
+  }, [load, roleTab])
 
   useEffect(() => {
     const timer = setTimeout(() => { setPage(1); load(1, search, roleTab) }, 400)
     return () => clearTimeout(timer)
-  }, [search])
+  }, [load, search, roleTab])
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
@@ -200,6 +204,7 @@ export function AdminUsersTable() {
 
 function UserModal({ user, onClose, onSuccess }) {
   const token = useAuthStore((s) => s.token)
+  const currentUser = useAuthStore((s) => s.user)
   const isEdit = !!user
 
   const [form, setForm] = useState({
@@ -207,7 +212,8 @@ function UserModal({ user, onClose, onSuccess }) {
     email: user?.email || '',
     password: '',
     role: user?.role || 'user',
-    permissions: user?.permissions || {}
+    permissions: user?.permissions || {},
+    isVerified: user?.isVerified === true
   })
 
   const [loading, setLoading] = useState(false)
@@ -233,6 +239,11 @@ function UserModal({ user, onClose, onSuccess }) {
     const payload = { ...form }
     if (isEdit && !payload.password) delete payload.password;
     if (payload.role === 'user') delete payload.permissions;
+    if (!isSuperAdmin(currentUser)) {
+      delete payload.role
+      delete payload.permissions
+      delete payload.isVerified
+    }
 
     try {
       const res = await fetch(isEdit ? `/api/admin/users/${user._id}` : '/api/admin/users', {
@@ -273,18 +284,30 @@ function UserModal({ user, onClose, onSuccess }) {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-500 uppercase">Password {isEdit && '(Leave empty to keep)'}</label>
-              <input required={!isEdit} type="password" minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" />
+              <input required={!isEdit} type="password" minLength={12} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-500 uppercase">Role</label>
-              <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm appearance-none">
+              <select disabled={!isSuperAdmin(currentUser)} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm appearance-none disabled:opacity-60">
                 <option value="user">Normal User</option>
                 <option value="admin">Administrator</option>
               </select>
             </div>
           </div>
 
-          {form.role === 'admin' && (
+          {isEdit && isSuperAdmin(currentUser) && user?.role !== 'admin' && (
+            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+              <input
+                type="checkbox"
+                checked={form.isVerified}
+                onChange={(e) => setForm(f => ({ ...f, isVerified: e.target.checked }))}
+                className="rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
+              />
+              Verified account (allows review submission)
+            </label>
+          )}
+
+          {form.role === 'admin' && isSuperAdmin(currentUser) && (
             <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-dark-700">
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2"><Shield size={16} className="text-primary-500" /> Administrative Permissions</h3>
               <p className="text-xs text-neutral-500">Configure access levels for the admin dashboard modules.</p>

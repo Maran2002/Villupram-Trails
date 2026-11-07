@@ -3,8 +3,9 @@
 import { useAuthStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MapPin, LogOut, Bell, User, LayoutDashboard, Settings, Flag } from 'lucide-react'
+import { MapPin, LogOut, User, LayoutDashboard, Settings, Flag } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 
 export default function DashboardHeader() {
   const { user, logout } = useAuthStore()
@@ -14,17 +15,6 @@ export default function DashboardHeader() {
     logout()
     toast.success('Logged out successfully')
     router.push('/')
-  }
-
-  const handleNotifications = () => {
-    toast('Notifications will be updated soon!', {
-      icon: '🔔',
-      style: {
-        borderRadius: '12px',
-        background: '#333',
-        color: '#fff',
-      },
-    })
   }
 
   return (
@@ -61,13 +51,7 @@ export default function DashboardHeader() {
 
         <div className="h-8 w-px bg-neutral-200 dark:bg-dark-700 hidden sm:block" />
 
-        <button 
-          onClick={handleNotifications}
-          className="p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-dark-700 rounded-full transition relative"
-        >
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full" />
-        </button>
+        <NotificationCenter />
 
         <Link href="/dashboard/profile" className="flex items-center gap-3 group">
           <div className="hidden sm:flex flex-col items-end">

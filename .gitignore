@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -43,6 +44,9 @@ next-env.d.ts
 # Markdown Files
 *.md
 !README.md
+!docs/
+!docs/audit/
+!docs/audit/*.md
 
 # Sensitive Data & Environment Variables
 .env
@@ -61,3 +65,4 @@ secrets.json
 Thumbs.db
 site_audit.md.resolved
 site_audit.md.resolved
+.vercel

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 const sidebarItems = [
   { title: 'Overview', subtitle: 'Dashboard Analytics', href: '/admin', type: 'page' },
@@ -9,6 +10,7 @@ const sidebarItems = [
   { title: 'Reviews', subtitle: 'User feedback', href: '/admin/reviews', type: 'page' },
   { title: 'Contributors', subtitle: 'Manage users', href: '/admin/contributors', type: 'page' },
   { title: 'Approvals', subtitle: 'Pending content', href: '/admin/approvals', type: 'page' },
+  { title: 'Notifications', subtitle: 'Publish community updates', href: '/admin/notifications', type: 'page', permission: 'notifications' },
   { title: 'Audit Trail', subtitle: 'Security logs', href: '/admin/audit', type: 'page' },
   { title: 'Settings', subtitle: 'Site config', href: '/admin/settings', type: 'page' },
 ]
@@ -17,46 +19,49 @@ export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    const canSearch = ['places', 'users', 'reviews', 'notifications'].some((module) => hasPermission(user, module, 'view'))
+    if (!canSearch) return forbidden()
 
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q')
 
-    if (!q || q.length < 2) {
+    if (!q || q.trim().length < 2) {
       return NextResponse.json({ success: true, data: [] })
     }
 
     const db = await getDb()
-    const regex = new RegExp(q, 'i')
+    const safeQuery = q.trim().slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(safeQuery, 'i')
 
     // 1. Filter Sidebar Items
     const pageResults = sidebarItems
+      .filter(item => !item.permission || hasPermission(user, item.permission, 'view'))
       .filter(item => item.title.match(regex) || item.subtitle.match(regex))
       .map(item => ({ ...item, id: item.href }))
 
     // 2. Search Places
-    const places = await db.collection('places')
+    const places = hasPermission(user, 'places', 'view') ? await db.collection('places')
       .find({ 
         $or: [{ name: regex }, { category: regex }] 
       })
       .limit(3)
-      .toArray()
+      .toArray() : []
 
     // 3. Search Users
-    const users = await db.collection('users')
+    const users = hasPermission(user, 'users', 'view') ? await db.collection('users')
       .find({ 
         $or: [{ username: regex }, { email: regex }] 
       })
       .limit(3)
-      .toArray()
+      .toArray() : []
 
     // 4. Search Reviews
-    const reviews = await db.collection('reviews')
+    const reviews = hasPermission(user, 'reviews', 'view') ? await db.collection('reviews')
       .find({ 
         $or: [{ comment: regex }, { userName: regex }, { placeName: regex }] 
       })
       .limit(3)
-      .toArray()
+      .toArray() : []
 
     const results = [
       ...pageResults,

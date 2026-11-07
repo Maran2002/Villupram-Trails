@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/lib/store'
 import { 
@@ -11,32 +11,28 @@ import toast from 'react-hot-toast'
 import { compressToBase64 } from '@/lib/imageUtils'
 
 export default function AdminProfilePage() {
+  const user = useAuthStore((s) => s.user)
+  if (!user) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>
+  return <AdminProfileForm key={user._id || user.id || user.username} initialUser={user} />
+}
+
+function AdminProfileForm({ initialUser }) {
   const { user, token, setUser } = useAuthStore()
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [changingPass, setChangingPass] = useState(false)
 
-  const [form, setForm] = useState({
-    username: '', email: '', bio: '', location: '', profileImage: ''
-  })
+  const [form, setForm] = useState(() => ({
+    username: initialUser.username || '',
+    email: initialUser.email || '',
+    bio: initialUser.bio || '',
+    location: initialUser.location || '',
+    profileImage: initialUser.profileImage || '',
+  }))
   const [passForm, setPassForm] = useState({
     oldPassword: '', newPassword: '', confirmPassword: ''
   })
   const [showPass, setShowPass] = useState(false)
   const fileInputRef = useRef(null)
-
-  useEffect(() => {
-    if (user) {
-      setForm({
-        username: user.username || '',
-        email: user.email || '',
-        bio: user.bio || '',
-        location: user.location || '',
-        profileImage: user.profileImage || ''
-      })
-      setLoading(false)
-    }
-  }, [user])
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
@@ -85,8 +81,6 @@ export default function AdminProfilePage() {
     } catch (err) { toast.error(err.message) }
     finally { setChangingPass(false) }
   }
-
-  if (loading) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -148,11 +142,11 @@ export default function AdminProfilePage() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">New Admin Password</label>
-                <input type="password" value={passForm.newPassword} onChange={(e) => setPassForm(p => ({ ...p, newPassword: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required minLength={6} />
+                <input type="password" value={passForm.newPassword} onChange={(e) => setPassForm(p => ({ ...p, newPassword: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required minLength={12} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Confirm Password</label>
-                <input type="password" value={passForm.confirmPassword} onChange={(e) => setPassForm(p => ({ ...p, confirmPassword: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required minLength={6} />
+                <input type="password" value={passForm.confirmPassword} onChange={(e) => setPassForm(p => ({ ...p, confirmPassword: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required minLength={12} />
               </div>
             </div>
             <button type="submit" disabled={changingPass} className="w-full py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-60 transition-all flex items-center justify-center gap-2">{changingPass ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />} Update Access</button>

@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 // GET /api/admin/audit — admin only
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'audit', 'view')) return forbidden()
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page')) || 1
-    const limit = parseInt(searchParams.get('limit')) || 50
+    const page = Math.max(1, parseInt(searchParams.get('page')) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 50))
     const action = searchParams.get('action')
     const target = searchParams.get('target')
 
     const db = await getDb()
     const query = {}
-    if (action) query.action = { $regex: action, $options: 'i' }
+    if (action) query.action = { $regex: action.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
     if (target) query.target = target
 
     const logs = await db.collection('audit_logs')

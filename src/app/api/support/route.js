@@ -6,7 +6,10 @@ export async function POST(req) {
     const { name, email, topic, message } = await req.json()
 
     // Validate the input
-    if (!name || !email || !topic || !message) {
+    if (typeof name !== 'string' || !name.trim() || name.length > 100
+      || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254
+      || typeof topic !== 'string' || !topic.trim() || topic.length > 120
+      || typeof message !== 'string' || !message.trim() || message.length > 5000) {
       return NextResponse.json(
         { success: false, message: 'Please provide all required fields.' },
         { status: 400 }
@@ -17,10 +20,10 @@ export async function POST(req) {
     
     // Create support ticket document
     const newTicket = {
-      name,
-      email,
-      topic,
-      message,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      topic: topic.trim(),
+      message: message.trim(),
       status: 'open', // open, in-progress, closed
       createdAt: new Date(),
       updatedAt: new Date(),

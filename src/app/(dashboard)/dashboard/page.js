@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
 import { MapPin, MessageSquare, Clock, CheckCircle, XCircle, Eye, Trash2, ChevronRight } from 'lucide-react'
+import { PlaceCard } from '@/components/place/PlaceCard'
 
 const STATUS_CONFIG = {
   Approved: { label: 'Approved', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
@@ -24,41 +25,59 @@ function StatusBadge({ status }) {
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
-  const token = useAuthStore((s) => s.token)
+  const userId = user?._id?.toString()
   const [data, setData] = useState(null)
   const [activeTab, setActiveTab] = useState('places')
   const [deletingId, setDeletingId] = useState(null)
+  const [savedPlacesState, setSavedPlacesState] = useState(null)
+  const savedPlaces = savedPlacesState && savedPlacesState.userId === userId
+    ? savedPlacesState.places
+    : null
 
   useEffect(() => {
-    const t = token || localStorage.getItem('auth_token')
-    if (!t) return
-    fetch('/api/dashboard/my-contributions', {
-      headers: { Authorization: `Bearer ${t}` },
-    })
+    fetch('/api/dashboard/my-contributions')
       .then(r => r.json())
-      .then(d => { if (d.success) setData(d.data) })
+      .then(d => {
+        if (d.success) {
+          const result = d.data && typeof d.data === 'object' ? d.data : {}
+          setData({
+            ...result,
+            stats: result.stats && typeof result.stats === 'object' ? result.stats : {},
+            places: Array.isArray(result.places) ? result.places : [],
+            reviews: Array.isArray(result.reviews) ? result.reviews : [],
+          })
+        }
+      })
       .catch(() => {})
-  }, [token])
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+    fetch('/api/user/favorites')
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => { if (result?.success) setSavedPlacesState({ userId, places: result.data }) })
+      .catch(() => setSavedPlacesState({ userId, places: [] }))
+  }, [userId])
 
   const handleDeleteReview = async (reviewId) => {
     if (!confirm('Delete this review permanently?')) return
-    const t = token || localStorage.getItem('auth_token')
     setDeletingId(reviewId)
     try {
-      await fetch(`/api/reviews/${reviewId}`, {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${t}` },
       })
+      const result = await response.json()
+      if (!response.ok || !result.success) throw new Error(result.error || 'Could not delete review')
       setData(prev => ({ ...prev, reviews: prev.reviews.filter(r => r._id !== reviewId) }))
-    } catch {}
+    } catch (error) { window.alert(error.message || 'Could not delete review') }
     setDeletingId(null)
   }
 
   const stats = [
-    { label: 'Places Added', value: data?.stats.placesAdded ?? 0, icon: '📍' },
-    { label: 'Approved',     value: data?.stats.placesApproved ?? 0, icon: '✅' },
-    { label: 'Pending',      value: data?.stats.placesPending ?? 0, icon: '⏳' },
-    { label: 'Reviews',      value: data?.stats.reviewsWritten ?? 0, icon: '📝' },
+    { label: 'Places Added', value: data?.stats?.placesAdded ?? 0, icon: '📍' },
+    { label: 'Approved',     value: data?.stats?.placesApproved ?? 0, icon: '✅' },
+    { label: 'Pending',      value: data?.stats?.placesPending ?? 0, icon: '⏳' },
+    { label: 'Reviews',      value: data?.stats?.reviewsWritten ?? 0, icon: '📝' },
   ]
 
   return (
@@ -93,14 +112,14 @@ export default function DashboardPage() {
         {/* Tabs */}
         <div>
           <div className="flex border-b border-neutral-200 dark:border-dark-700 mb-6">
-            {['places', 'reviews'].map(tab => (
+            {['places', 'reviews', 'saved'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-6 py-3 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
                   activeTab === tab
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
                 }`}>
-                {tab === 'places' ? `My Places (${data?.stats.placesAdded ?? 0})` : `My Reviews (${data?.stats.reviewsWritten ?? 0})`}
+                {tab === 'places' ? `My Places (${data?.stats?.placesAdded ?? 0})` : tab === 'reviews' ? `My Reviews (${data?.stats?.reviewsWritten ?? 0})` : `Saved Places (${savedPlaces?.length ?? 0})`}
               </button>
             ))}
             <div className="ml-auto flex items-center pb-3">
@@ -200,6 +219,22 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === 'saved' && (
+            !savedPlaces ? (
+              <div className="py-16 text-center text-sm text-neutral-500">Loading saved places…</div>
+            ) : savedPlaces.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="font-serif font-bold text-lg text-neutral-800 dark:text-white mb-1">No saved places yet</p>
+                <p className="text-sm text-neutral-500 mb-4">Save a destination to find it here later.</p>
+                <Link href="/explore" className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold rounded-xl transition-colors">Explore Places</Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {savedPlaces.map((place, index) => <PlaceCard key={place._id} place={place} index={index} />)}
+              </div>
+            )
           )}
         </div>
       </div>

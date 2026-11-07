@@ -3,6 +3,9 @@ import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, verifyToken, unauthorized, forbidden, writeAudit } from '@/lib/auth'
 import { buildPlacePatch } from '@/lib/schemas'
+import { hasPermission } from '@/lib/permissions'
+import clientPromise from '@/lib/mongodb'
+import { decrementReviewContribution } from '@/lib/reviewStats'
 
 export async function GET(request, { params }) {
   try {
@@ -11,15 +14,15 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Invalid place ID' }, { status: 400 })
     }
     const db      = await getDb()
-    const decoded = verifyToken(request)
+    const user = await getAuthUser(request)
     const place   = await db.collection('places').findOne({ _id: new ObjectId(placeId) })
 
     if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
 
     if (place.status !== 'Approved') {
-      if (!decoded) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
-      const isOwner = place.submittedBy?.userId?.toString() === decoded.userId?.toString()
-      if (!isOwner && decoded.role !== 'admin') {
+      if (!user) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
+      const isOwner = place.submittedBy?.userId?.toString() === user._id.toString()
+      if (!isOwner && !hasPermission(user, 'places', 'view')) {
         return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
       }
     }
@@ -44,11 +47,16 @@ export async function PUT(request, { params }) {
     const place = await db.collection('places').findOne({ _id: new ObjectId(placeId) })
     if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
 
+    const body = await request.json()
+
     const isOwner = place.submittedBy?.userId?.toString() === user._id.toString()
     const isAdmin = user.role === 'admin'
+    if (isAdmin && !hasPermission(user, 'places', 'edit')) return forbidden('You do not have permission to edit places')
+    if (isAdmin && Object.hasOwn(body, 'status') && !hasPermission(user, 'approvals', 'edit')) {
+      return forbidden('You do not have permission to change place approval status')
+    }
     if (!isOwner && !isAdmin) return forbidden('You can only edit your own places')
 
-    const body = await request.json()
     const { patch, errors } = buildPlacePatch(body, { isAdmin })
 
     if (errors.length) {
@@ -102,14 +110,37 @@ export async function DELETE(request, { params }) {
 
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden('Only admins can delete places')
+    if (!hasPermission(user, 'places', 'delete')) return forbidden('You do not have permission to delete places')
 
     const db    = await getDb()
     const place = await db.collection('places').findOne({ _id: new ObjectId(placeId) })
     if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
 
-    await db.collection('places').deleteOne({ _id: new ObjectId(placeId) })
-    await db.collection('reviews').deleteMany({ placeId: new ObjectId(placeId) })
+    const placeObjectId = new ObjectId(placeId)
+    const client = await clientPromise
+    const session = client.startSession()
+    let deleted = false
+    try {
+      await session.withTransaction(async () => {
+        const result = await db.collection('places').deleteOne({ _id: placeObjectId }, { session })
+        deleted = result.deletedCount === 1
+        if (!deleted) return
+
+        const reviewContributions = await db.collection('reviews').aggregate([
+          { $match: { placeId: placeObjectId } },
+          { $group: { _id: '$userId', count: { $sum: 1 } } },
+        ], { session }).toArray()
+
+        await db.collection('reviews').deleteMany({ placeId: placeObjectId }, { session })
+        await db.collection('favorites').deleteMany({ placeId: placeObjectId }, { session })
+        for (const contribution of reviewContributions) {
+          await decrementReviewContribution(db, contribution._id, session, contribution.count)
+        }
+      })
+    } finally {
+      await session.endSession()
+    }
+    if (!deleted) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
 
     await writeAudit({
       userId: user._id, username: user.username, role: user.role,

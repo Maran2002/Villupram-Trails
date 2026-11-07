@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Compass, SlidersHorizontal, Map as MapIcon, X } from 'lucide-react'
+import { Search, MapPin, Compass, SlidersHorizontal, X } from 'lucide-react'
 import { PlaceGrid } from '@/components/place/PlaceGrid'
 import { PlaceFilter } from '@/components/place/PlaceFilter'
 import { useFilterStore } from '@/lib/store/filterStore'
@@ -59,7 +59,7 @@ export default function ExplorePage() {
             </motion.p>
 
             {/* Interactive Search Bar */}
-            <motion.div variants={fadeUp} className="w-full max-w-2xl relative group">
+            <motion.form variants={fadeUp} onSubmit={(event) => { event.preventDefault(); setSearch(search.trim()) }} className="w-full max-w-2xl relative group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 <Search size={22} className="text-neutral-400 group-focus-within:text-primary-500 transition-colors" />
               </div>
@@ -70,10 +70,10 @@ export default function ExplorePage() {
                 placeholder="Search places, categories, or keywords..."
                 className="w-full h-16 pl-14 pr-32 rounded-2xl bg-white dark:bg-dark-800 border-2 border-transparent shadow-xl shadow-neutral-200/50 dark:shadow-dark-900/50 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-lg"
               />
-              <button className="absolute right-2 top-2 bottom-2 bg-primary-500 hover:bg-primary-600 text-white px-6 rounded-xl font-medium transition-colors shadow-md">
+              <button type="submit" className="absolute right-2 top-2 bottom-2 bg-primary-500 hover:bg-primary-600 text-white px-6 rounded-xl font-medium transition-colors shadow-md">
                 Search
               </button>
-            </motion.div>
+            </motion.form>
           </motion.div>
         </div>
       </section>
@@ -93,10 +93,6 @@ export default function ExplorePage() {
             >
               <SlidersHorizontal size={16} />
               Filters
-            </button>
-            <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-700 rounded-lg text-sm font-medium shadow-sm hover:bg-neutral-50 dark:hover:bg-dark-700 transition-colors text-primary-600 dark:text-primary-400">
-              <MapIcon size={16} />
-              Map View
             </button>
           </div>
         </div>

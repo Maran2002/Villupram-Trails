@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -8,26 +8,36 @@ import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, MapPin, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
-  const [stats, setStats] = useState({ places: '120+', members: '1.2K', visitors: '8K' })
+  const [loginError, setLoginError] = useState('')
+  const [stats, setStats] = useState({ places: '—', members: '—', pageViews: '—' })
   const { login, isLoading } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const from = searchParams.get('from') || '/dashboard'
+  const requestedFrom = searchParams.get('from')
+  let from = '/dashboard'
+  if (requestedFrom) {
+    try {
+      const destination = new URL(requestedFrom, 'https://villupuram-trails.invalid')
+      if (destination.origin === 'https://villupuram-trails.invalid') {
+        from = `${destination.pathname}${destination.search}${destination.hash}`
+      }
+    } catch {}
+  }
 
   useEffect(() => {
     fetch('/api/stats/public')
       .then(res => res.json())
       .then(json => {
         if (json.success) {
-          const { totalPlaces, totalUsers, monthlyVisitors } = json.data
+          const { totalPlaces, totalUsers, monthlyPageViews } = json.data
           setStats({
-            places: totalPlaces > 0 ? `${totalPlaces}+` : '120+',
-            members: totalUsers >= 1000 ? `${(totalUsers/1000).toFixed(1)}K` : `${totalUsers}`,
-            visitors: monthlyVisitors >= 1000 ? `${(monthlyVisitors/1000).toFixed(1)}K` : `${monthlyVisitors}`
+            places: Number(totalPlaces).toLocaleString(),
+            members: Number(totalUsers).toLocaleString(),
+            pageViews: Number(monthlyPageViews).toLocaleString()
           })
         }
       })
@@ -36,12 +46,15 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLoginError('')
     try {
       await login(email, password)
       toast.success('Welcome back!')
       router.push(from)
     } catch (err) {
-      toast.error(err.message || 'Invalid email or password')
+      const message = err.message || 'Invalid email or password'
+      setLoginError(message)
+      toast.error(message)
     }
   }
 
@@ -75,7 +88,7 @@ export default function LoginPage() {
             {[
               [stats.places, 'Places'], 
               [stats.members, 'Members'], 
-              [stats.visitors, 'Visitors']
+              [stats.pageViews, 'Page Views']
             ].map(([v, l]) => (
               <div key={l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/10">
                 <p className="font-serif font-bold text-2xl">{v}</p>
@@ -106,6 +119,15 @@ export default function LoginPage() {
             <h1 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white mb-2">Welcome back</h1>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">Sign in to continue your journey</p>
           </div>
+
+          {/* {loginError && (
+            <div role="alert" aria-live="assertive" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+              {loginError}
+              {loginError.toLowerCase().includes('verify your email') && (
+                <> <Link href="/auth/verify-email" className="font-bold underline">Verify email</Link></>
+              )}
+            </div>
+          )} */}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
@@ -158,6 +180,17 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <p className="text-right mt-3 text-sm">
+            <Link href="/auth/forgot-password" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
+              Forgot password?
+            </Link>
+          </p>
+          <p className="text-right mt-2 text-sm">
+            <Link href="/auth/verify-email" className="text-neutral-500 dark:text-neutral-400 hover:underline">
+              Need an email verification code?
+            </Link>
+          </p>
+
           <p className="text-center mt-6 text-sm text-neutral-500 dark:text-neutral-400">
             New to Villupuram Hub?{' '}
             <Link href="/auth/register" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
@@ -167,5 +200,17 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 flex items-center justify-center">
+        <span className="w-8 h-8 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

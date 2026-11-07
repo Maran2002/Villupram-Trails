@@ -13,7 +13,12 @@ const MAX_BYTES  = 400_000 // ~400 KB per image after encoding
  * Compress and convert a File to a base64 data URI.
  * Returns { dataUrl, sizeKB, width, height } or throws on error.
  */
-export function compressToBase64(file) {
+export function compressToBase64(file, options = {}) {
+  const maxWidth = options.maxWidth || MAX_WIDTH
+  const maxHeight = options.maxHeight || MAX_HEIGHT
+  const initialQuality = options.quality || QUALITY
+  const format = options.format || 'image/webp'
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(new Error('Failed to read file'))
@@ -23,7 +28,7 @@ export function compressToBase64(file) {
       img.onload = () => {
         // Calculate scaled dimensions preserving aspect ratio
         let { width, height } = img
-        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height, 1)
+        const ratio = Math.min(maxWidth / width, maxHeight / height, 1)
         width  = Math.round(width  * ratio)
         height = Math.round(height * ratio)
 
@@ -34,14 +39,16 @@ export function compressToBase64(file) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Try JPEG first; if still too big, lower quality progressively
-        let quality = QUALITY
         let dataUrl
-        do {
-          dataUrl = canvas.toDataURL('image/jpeg', quality)
-          quality -= 0.08
-        } while (dataUrl.length > MAX_BYTES * 1.37 && quality > 0.3)
-        // 1.37 = base64 overhead factor (4/3 bytes per byte * some headroom)
+        if (format === 'image/png') {
+          dataUrl = canvas.toDataURL('image/png')
+        } else {
+          let quality = initialQuality
+          do {
+            dataUrl = canvas.toDataURL(format, quality)
+            quality -= 0.08
+          } while (dataUrl.length > MAX_BYTES * 1.37 && quality > 0.3)
+        }
 
         const sizeKB = Math.round((dataUrl.length * 0.75) / 1024)
         resolve({ dataUrl, sizeKB, width, height })

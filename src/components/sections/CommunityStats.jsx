@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Users, Star, Eye } from 'lucide-react'
 
-const FALLBACK_STATS = [
-  { id: 'places', label: 'Places Catalogued', value: '120+', icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-  { id: 'users', label: 'Community Members', value: '1.2K+', icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
-  { id: 'reviews', label: 'Reviews Written', value: '500+', icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
-  { id: 'visitors', label: 'Monthly Visitors', value: '8K+', icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
+const EMPTY_STATS = [
+  { id: 'places', label: 'Places Catalogued', value: '—', icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+  { id: 'users', label: 'Community Members', value: '—', icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
+  { id: 'reviews', label: 'Reviews Written', value: '—', icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+  { id: 'visitors', label: 'Monthly Page Views', value: '—', icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
 ]
 
 export function CommunityStats() {
-  const [stats, setStats] = useState(FALLBACK_STATS)
+  const [stats, setStats] = useState(EMPTY_STATS)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -20,12 +20,12 @@ export function CommunityStats() {
         const res = await fetch('/api/stats/public')
         const json = await res.json()
         if (json.success) {
-          const { totalPlaces, totalUsers, totalReviews, monthlyVisitors } = json.data
+          const { totalPlaces, totalUsers, totalReviews, monthlyPageViews } = json.data
           setStats([
-            { id: 'places', label: 'Places Catalogued', value: formatValue(totalPlaces, '120+'), icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-            { id: 'users', label: 'Community Members', value: formatValue(totalUsers, '1.2K+'), icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
-            { id: 'reviews', label: 'Reviews Written', value: formatValue(totalReviews, '500+'), icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
-            { id: 'visitors', label: 'Monthly Visitors', value: formatValue(monthlyVisitors, '8K+'), icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
+            { id: 'places', label: 'Places Catalogued', value: formatValue(totalPlaces), icon: MapPin, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+            { id: 'users', label: 'Community Members', value: formatValue(totalUsers), icon: Users, color: 'text-secondary-400', bg: 'bg-secondary-500/10' },
+            { id: 'reviews', label: 'Reviews Written', value: formatValue(totalReviews), icon: Star, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+            { id: 'visitors', label: 'Monthly Page Views', value: formatValue(monthlyPageViews), icon: Eye, color: 'text-primary-300', bg: 'bg-primary-400/10' },
           ])
         }
       } catch (err) {
@@ -83,8 +83,7 @@ export function CommunityStats() {
   )
 }
 
-function formatValue(val, fallback) {
-  if (val === undefined || val === null || val === 0) return fallback
-  if (val >= 1000) return (val / 1000).toFixed(1) + 'K+'
-  return val + '+'
+function formatValue(val) {
+  if (!Number.isFinite(val)) return '—'
+  return val.toLocaleString()
 }

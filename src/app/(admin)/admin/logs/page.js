@@ -1,14 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { RefreshCcw, Globe, Eye } from 'lucide-react'
 import { 
-  Calendar, Filter, RefreshCcw, Monitor, Smartphone, 
-  Tablet, Globe, Eye, Users, MousePointer, ExternalLink,
-  ChevronLeft, ChevronRight, Search
-} from 'lucide-react'
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
   BarChart, Bar, Legend
 } from 'recharts'
@@ -25,7 +21,7 @@ export default function VisitorLogsPage() {
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(7)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const t = token || localStorage.getItem('auth_token')
@@ -41,11 +37,12 @@ export default function VisitorLogsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [days, token])
 
   useEffect(() => {
-    fetchData()
-  }, [days, token])
+    const timer = setTimeout(() => fetchData(), 0)
+    return () => clearTimeout(timer)
+  }, [fetchData])
 
   if (loading && !data) {
     return (
@@ -63,9 +60,9 @@ export default function VisitorLogsPage() {
         {/* Header & Filters */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white">Visitor Analytics</h2>
+            <h2 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white">Page View Analytics</h2>
             <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
-              Real-time insights into how users are interacting with the platform.
+              Recent page views and coarse device/browser totals. Individual visitor identities are not tracked.
             </p>
           </div>
           
@@ -94,34 +91,18 @@ export default function VisitorLogsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <QuickStat 
-            label="Total Sessions" 
-            value={summary?.totalVisits} 
+            label="Page Views in Selected Period"
+            value={summary?.totalPageViews}
             icon={Eye} 
-            trend="+12%" 
             color="indigo" 
           />
           <QuickStat 
-            label="Unique Visitors" 
-            value={summary?.uniqueVisitors} 
-            icon={Users} 
-            trend="+5%" 
-            color="emerald" 
-          />
-          <QuickStat 
-            label="Avg. Pages/Visit" 
-            value={(summary?.totalVisits / (summary?.uniqueVisitors || 1)).toFixed(1)} 
-            icon={MousePointer} 
-            trend="-2%" 
-            color="amber" 
-          />
-          <QuickStat 
-            label="Bounce Rate" 
-            value="42%" 
+            label="Recent Records Displayed"
+            value={summary?.recentRecordsDisplayed}
             icon={RefreshCcw} 
-            trend="-5%" 
-            color="rose" 
+            color="emerald"
           />
         </div>
 
@@ -130,17 +111,7 @@ export default function VisitorLogsPage() {
           {/* Traffic Over Time */}
           <div className="lg:col-span-2 bg-white dark:bg-dark-800 rounded-2xl p-6 border border-neutral-200 dark:border-dark-700 shadow-sm">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Traffic Overview</h3>
-              <div className="flex items-center gap-4 text-xs font-medium">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-primary-500" />
-                  <span className="text-neutral-500">Total Visits</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span className="text-neutral-500">Unique</span>
-                </div>
-              </div>
+              <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Page Views by Day</h3>
             </div>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -149,10 +120,6 @@ export default function VisitorLogsPage() {
                     <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorUnique" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -171,8 +138,7 @@ export default function VisitorLogsPage() {
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Area type="monotone" dataKey="count" name="Total Visits" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
-                  <Area type="monotone" dataKey="unique" name="Unique" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorUnique)" />
+                  <Area type="monotone" dataKey="count" name="Page Views" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -223,7 +189,6 @@ export default function VisitorLogsPage() {
           <div className="bg-white dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-neutral-100 dark:border-dark-700 flex items-center justify-between">
               <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Most Visited Pages</h3>
-              <button className="text-primary-500 text-sm hover:underline">View All</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -231,7 +196,6 @@ export default function VisitorLogsPage() {
                   <tr className="bg-neutral-50 dark:bg-dark-900/50 text-neutral-500 dark:text-neutral-400 text-xs font-semibold uppercase tracking-wider">
                     <th className="px-6 py-3">Page Path</th>
                     <th className="px-6 py-3 text-right">Views</th>
-                    <th className="px-6 py-3 text-right">Trend</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-dark-700">
@@ -248,11 +212,6 @@ export default function VisitorLogsPage() {
                       <td className="px-6 py-4 text-right font-semibold text-neutral-900 dark:text-white">
                         {page.count.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
-                          +{(Math.random() * 20).toFixed(1)}%
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -262,7 +221,7 @@ export default function VisitorLogsPage() {
 
           {/* Browser Stats */}
           <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-neutral-200 dark:border-dark-700 shadow-sm">
-            <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white mb-6">Browsers & OS</h3>
+            <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white mb-6">Browsers</h3>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={browserStats} layout="vertical" margin={{ left: 20 }}>
@@ -293,24 +252,15 @@ export default function VisitorLogsPage() {
         {/* Recent Logs Table */}
         <div className="bg-white dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-neutral-100 dark:border-dark-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Recent Sessions</h3>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search IP or path..."
-                className="pl-10 pr-4 py-2 bg-neutral-100 dark:bg-dark-700 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary-500 w-full sm:w-64"
-              />
-            </div>
+            <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Recent Page Views</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-neutral-50 dark:bg-dark-900/50 text-neutral-500 dark:text-neutral-400 text-xs font-semibold uppercase tracking-wider">
                   <th className="px-6 py-3 text-center">Time</th>
-                  <th className="px-6 py-3">Visitor Info</th>
+                  <th className="px-6 py-3">Device Details</th>
                   <th className="px-6 py-3">Path</th>
-                  <th className="px-6 py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-dark-700">
@@ -329,10 +279,10 @@ export default function VisitorLogsPage() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 font-mono">
-                          {log.ip}
+                          {log.browser} · {log.os}
                         </span>
                         <span className="text-[10px] text-neutral-400 truncate max-w-[200px]">
-                          {log.browser} • {log.os} • {log.device}
+                          {log.device}
                         </span>
                       </div>
                     </td>
@@ -342,26 +292,13 @@ export default function VisitorLogsPage() {
                         <span className="truncate max-w-[150px]">{log.path}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-neutral-400 hover:text-primary-500 transition-colors">
-                        <ExternalLink size={16} />
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="p-4 border-t border-neutral-100 dark:border-dark-700 flex items-center justify-between">
-            <p className="text-xs text-neutral-500">Showing last 100 activities</p>
-            <div className="flex items-center gap-2">
-              <button className="p-1.5 rounded-lg border border-neutral-200 dark:border-dark-700 disabled:opacity-30" disabled>
-                <ChevronLeft size={16} />
-              </button>
-              <button className="p-1.5 rounded-lg border border-neutral-200 dark:border-dark-700 hover:bg-neutral-50 dark:hover:bg-dark-700">
-                <ChevronRight size={16} />
-              </button>
-            </div>
+          <div className="border-t border-neutral-100 p-4 dark:border-dark-700">
+            <p className="text-xs text-neutral-500">Showing up to 100 of {summary?.totalPageViews || 0} page views in the selected period.</p>
           </div>
         </div>
       </div>
@@ -369,12 +306,10 @@ export default function VisitorLogsPage() {
   )
 }
 
-function QuickStat({ label, value, icon: Icon, trend, color }) {
+function QuickStat({ label, value, icon: Icon, color }) {
   const colors = {
     indigo: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',
     emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
-    amber: 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
-    rose: 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400',
   }
   
   return (
@@ -387,13 +322,10 @@ function QuickStat({ label, value, icon: Icon, trend, color }) {
         <div className={`p-2 rounded-xl ${colors[color]}`}>
           <Icon size={20} />
         </div>
-        <span className={`text-xs font-bold ${trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-          {trend}
-        </span>
       </div>
       <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{label}</p>
       <p className="text-2xl font-bold text-neutral-900 dark:text-white mt-1">
-        {value !== undefined ? value : '...'}
+        {value !== undefined ? Number(value).toLocaleString() : '...'}
       </p>
     </motion.div>
   )

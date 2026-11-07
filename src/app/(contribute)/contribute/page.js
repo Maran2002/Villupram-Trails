@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
@@ -11,7 +11,7 @@ import {
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
 import { compressToBase64 } from '@/lib/imageUtils'
-import { reverseGeocode, getEmbedMapUrl } from '@/lib/maps'
+import { reverseGeocode, getStaticMapUrl } from '@/lib/maps'
 
 const CATEGORIES = ['Heritage', 'Nature', 'Temple', 'Food', 'Beach', 'Adventure', 'Other']
 const SUB_CATEGORIES = ['Fortress', 'Palace', 'Waterfall', 'Wildlife', 'Religious', 'Dam', 'Museum', 'Other']
@@ -258,14 +258,23 @@ function TextField({ label, required, value, onChange, placeholder, type = 'text
 
 /* ── Page ─────────────────────────────────────────────────── */
 export default function ContributePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[400px] items-center justify-center"><RefreshCw className="h-8 w-8 animate-spin text-primary-500" /></div>}>
+      <ContributePageForm />
+    </Suspense>
+  )
+}
+
+function ContributePageForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
   const fileRef = useRef(null)
   const { user, token } = useAuthStore()
   const [submitting, setSaving] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [imageData, setImageData] = useState([])  // [{ dataUrl, sizeKB, name }]
   const [compressing, setCompressing] = useState(false)
-  const [editId, setEditId] = useState(null)
 
   const [form, setForm] = useState({
     name: '', category: '', subCategory: '', description: '',
@@ -275,11 +284,8 @@ export default function ContributePage() {
   })
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const id = params.get('edit')
-    if (id) {
-      setEditId(id)
-      fetch(`/api/places/${id}`)
+    if (editId) {
+      fetch(`/api/places/${editId}`)
         .then(res => res.json())
         .then(json => {
           if (json.success) {
@@ -303,7 +309,7 @@ export default function ContributePage() {
         })
         .catch(() => toast.error('Failed to load place data'))
     }
-  }, [])
+  }, [editId])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
 
@@ -475,13 +481,10 @@ export default function ContributePage() {
               <FieldLabel required>Map Preview</FieldLabel>
               <div className="h-48 rounded-xl bg-neutral-100 dark:bg-dark-700 border border-neutral-200 dark:border-dark-600 relative overflow-hidden flex items-center justify-center">
                 {form.latitude && form.longitude ? (
-                  <iframe
-                    title="Map Preview"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    src={getEmbedMapUrl({ lat: form.latitude, lng: form.longitude })}
-                    allowFullScreen
+                  <img
+                    alt="Map preview for the entered coordinates"
+                    src={getStaticMapUrl(form.latitude, form.longitude)}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-neutral-400">

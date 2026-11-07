@@ -25,7 +25,7 @@ export function TrendingLocations() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-50 dark:bg-accent-900/20 text-accent-600 dark:text-accent-400 text-sm font-medium mb-4 border border-accent-100 dark:border-accent-800/50">
               <TrendingUp size={14} />
-              <span>What's popular</span>
+              <span>What&apos;s popular</span>
             </div>
             <h2 className="text-4xl font-serif font-bold text-neutral-900 dark:text-white mb-3">
               Trending Locations

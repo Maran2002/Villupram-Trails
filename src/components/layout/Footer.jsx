@@ -41,11 +41,11 @@ export function Footer() {
           {/* Brand */}
           <div className="flex flex-col gap-6">
             <Link href="/" className="flex items-center gap-2 w-fit">
-              <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/20 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden">
                 {settings.siteLogo ? <img src={settings.siteLogo} alt="" className="w-full h-full object-cover" /> : <MapPin size={18} strokeWidth={2.5} />}
               </div>
               <span className="font-serif text-xl font-bold text-neutral-900 dark:text-white">
-                {settings.siteName || 'Villupuram'} <span className="text-primary-500 font-light italic">Hub</span>
+                {settings.siteName || 'Villupuram'}
               </span>
             </Link>
             <p className="text-neutral-600 dark:text-neutral-400 font-light leading-relaxed">
@@ -88,7 +88,7 @@ export function Footer() {
           {/* Newsletter */}
           <div className="flex flex-col gap-4">
             <h3 className="font-medium text-neutral-900 dark:text-white mb-2">Stay Updated</h3>
-            <p className="text-neutral-600 dark:text-neutral-400 font-light text-sm mb-2">Subscribe to our newsletter for the latest hidden gems.</p>
+            <p className="text-neutral-600 dark:text-neutral-400 font-light text-sm mb-2">Join the community updates list. Admins can view your email; automated emails are not currently sent.</p>
             <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
               <div className="flex relative">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none"><Mail size={16} className="text-neutral-400" /></div>

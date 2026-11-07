@@ -1,25 +1,22 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import apiClient from '@/lib/api'
-import { encryptedStorage } from './storage'
 
 export const useAuthStore = create()(
-  persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isLoading: false,
+      isSessionChecked: false,
 
       login: async (email, password) => {
         set({ isLoading: true })
         try {
           const { data } = await apiClient.post('/auth/login', { email, password })
-          const token = data.data?.token
           const user = data.data?.user
           
-          set({ token, user })
+          set({ token: null, user })
           if (typeof window !== 'undefined') {
-            localStorage.setItem('auth_token', token)
+            localStorage.removeItem('auth_token')
           }
           return data
         } finally {
@@ -35,12 +32,9 @@ export const useAuthStore = create()(
             password,
             username,
           })
-          const token = data.data?.token
-          const user = data.data?.user
-          
-          set({ token, user })
+          set({ token: null, user: null })
           if (typeof window !== 'undefined') {
-            localStorage.setItem('auth_token', token)
+            localStorage.removeItem('auth_token')
           }
           return data
         } finally {
@@ -50,13 +44,7 @@ export const useAuthStore = create()(
 
       logout: async () => {
         try {
-          const token = get().token || localStorage.getItem('auth_token')
-          if (token) {
-            await fetch('/api/auth/logout', {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token}` },
-            })
-          }
+          await fetch('/api/auth/logout', { method: 'POST' })
         } catch {}
         
         set({ user: null, token: null })
@@ -66,11 +54,7 @@ export const useAuthStore = create()(
         }
       },
 
-      setUser: (user) => set({ user }),
-    }),
-    {
-      name: 'auth-store',
-      storage: createJSONStorage(() => encryptedStorage),
-    }
-  )
+      setUser: (user) => set({ user, isSessionChecked: true }),
+      setSessionChecked: (isSessionChecked) => set({ isSessionChecked }),
+    })
 )

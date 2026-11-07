@@ -1,51 +1,55 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'logs', 'view')) return forbidden()
 
     const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '7')
+    const requestedDays = Number.parseInt(searchParams.get('days') || '7', 10)
+    const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(1, requestedDays)) : 7
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
     const db = await getDb()
 
-    // 1. Fetch recent logs for the table
-    const logs = await db.collection('visitor_logs')
-      .find({ timestamp: { $gte: startDate } })
-      .sort({ timestamp: -1 })
-      .limit(100)
-      .toArray()
+    const visitorLogs = db.collection('visitor_logs')
+    const timeQuery = { timestamp: { $gte: startDate } }
+    const [logs, totalPageViews] = await Promise.all([
+      visitorLogs.find(timeQuery, { projection: { path: 1, referer: 1, device: 1, browser: 1, os: 1, timestamp: 1 } })
+        .sort({ timestamp: -1 })
+        .limit(100)
+        .toArray(),
+      visitorLogs.countDocuments(timeQuery),
+    ])
 
-    // 2. Aggregate visits per day for the chart
-    const dailyVisits = await db.collection('visitor_logs').aggregate([
-      { $match: { timestamp: { $gte: startDate } } },
+    // Aggregate page views per day; the application does not retain a stable visitor identifier.
+    const dailyVisits = await visitorLogs.aggregate([
+      { $match: timeQuery },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
           count: { $sum: 1 },
-          unique: { $addToSet: "$ip" }
         }
       },
-      { $project: { date: "$_id", count: 1, unique: { $size: "$unique" }, _id: 0 } },
+      { $project: { date: "$_id", count: 1, _id: 0 } },
       { $sort: { date: 1 } }
     ]).toArray()
 
     // 3. Aggregate device distribution
-    const deviceStats = await db.collection('visitor_logs').aggregate([
-      { $match: { timestamp: { $gte: startDate } } },
+    const deviceStats = await visitorLogs.aggregate([
+      { $match: timeQuery },
       { $group: { _id: "$device", value: { $sum: 1 } } },
       { $project: { name: "$_id", value: 1, _id: 0 } }
     ]).toArray()
 
     // 4. Aggregate top pages
-    const pageStats = await db.collection('visitor_logs').aggregate([
-      { $match: { timestamp: { $gte: startDate } } },
+    const pageStats = await visitorLogs.aggregate([
+      { $match: timeQuery },
       { $group: { _id: "$path", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 },
@@ -53,8 +57,8 @@ export async function GET(request) {
     ]).toArray()
 
     // 5. Aggregate browser distribution
-    const browserStats = await db.collection('visitor_logs').aggregate([
-      { $match: { timestamp: { $gte: startDate } } },
+    const browserStats = await visitorLogs.aggregate([
+      { $match: timeQuery },
       { $group: { _id: "$browser", value: { $sum: 1 } } },
       { $project: { name: "$_id", value: 1, _id: 0 } }
     ]).toArray()
@@ -68,8 +72,9 @@ export async function GET(request) {
         pageStats,
         browserStats,
         summary: {
-          totalVisits: logs.length, // this is just for the fetched set, real total might be higher
-          uniqueVisitors: new Set(logs.map(l => l.ip)).size
+          totalPageViews,
+          recentRecordsDisplayed: logs.length,
+          days,
         }
       }
     })

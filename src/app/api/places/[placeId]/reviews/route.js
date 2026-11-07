@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
-import { getAuthUser, verifyToken, unauthorized, writeAudit } from '@/lib/auth'
+import { getAuthUser, unauthorized, writeAudit } from '@/lib/auth'
 import { buildReviewDoc } from '@/lib/schemas'
+import { hasPermission } from '@/lib/permissions'
+import clientPromise from '@/lib/mongodb'
+import { recalculatePlaceReviewStats } from '@/lib/reviewStats'
 
 export async function GET(request, { params }) {
   try {
@@ -12,10 +15,10 @@ export async function GET(request, { params }) {
     }
 
     const db      = await getDb()
-    const decoded = verifyToken(request)
+    const user = await getAuthUser(request)
 
     const query = { placeId: new ObjectId(placeId) }
-    if (!decoded || decoded.role !== 'admin') query.visible = true
+    if (!hasPermission(user, 'reviews', 'view')) query.visible = true
 
     const { searchParams } = new URL(request.url)
     const page  = Math.max(1, parseInt(searchParams.get('page'))  || 1)
@@ -45,6 +48,12 @@ export async function POST(request, { params }) {
 
     const user = await getAuthUser(request)
     if (!user) return unauthorized('Please log in to write a review')
+    if (user.role === 'admin' && !hasPermission(user, 'reviews', 'add')) {
+      return NextResponse.json({ success: false, error: 'You do not have permission to submit reviews' }, { status: 403 })
+    }
+    if (user.role !== 'admin' && user.isVerified !== true) {
+      return NextResponse.json({ success: false, error: 'Your account must be verified before writing a review' }, { status: 403 })
+    }
 
     const body = await request.json()
     const placeOid = new ObjectId(placeId)
@@ -58,32 +67,32 @@ export async function POST(request, { params }) {
     const settings = await db.collection('settings').findOne({ _id: 'site_config' })
 
     // If review approval is required, set visible to false for non-admins
-    if (user.role !== 'admin' && settings?.requireReviewApproval === true) {
+    if (!hasPermission(user, 'reviews', 'add') && user.role !== 'admin' && settings?.requireReviewApproval === true) {
       doc.visible = false
     }
 
     // Ensure the place exists and is approved
     const place = await db.collection('places').findOne({ _id: placeOid })
-    if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
+    if (!place || (place.status !== 'Approved' && !hasPermission(user, 'places', 'view'))) {
+      return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
+    }
 
-    const result = await db.collection('reviews').insertOne(doc)
-
-    // Recalculate aggregate rating on the place
-    const allVisible = await db.collection('reviews')
-      .find({ placeId: placeOid, visible: true })
-      .toArray()
-    const avgRating = allVisible.length
-      ? allVisible.reduce((s, r) => s + (r.rating || 0), 0) / allVisible.length
-      : 0
-    await db.collection('places').updateOne(
-      { _id: placeOid },
-      { $set: { rating: Math.round(avgRating * 10) / 10, reviewCount: allVisible.length } }
-    )
-
-    await db.collection('users').updateOne(
-      { _id: user._id },
-      { $inc: { 'contributions.reviewsWritten': 1 } }
-    )
+    const client = await clientPromise
+    const session = client.startSession()
+    let result
+    try {
+      await session.withTransaction(async () => {
+        result = await db.collection('reviews').insertOne(doc, { session })
+        await recalculatePlaceReviewStats(db, placeOid, session)
+        await db.collection('users').updateOne(
+          { _id: user._id },
+          { $inc: { 'contributions.reviewsWritten': 1 } },
+          { session }
+        )
+      })
+    } finally {
+      await session.endSession()
+    }
 
     await writeAudit({
       userId: user._id, username: user.username, role: user.role,

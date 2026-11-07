@@ -36,7 +36,7 @@ export default function TermsPage() {
           </div>
 
           <h2>1. Acceptance of Terms</h2>
-          <p>By accessing and using the Villupuram Discovery Hub ("Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.</p>
+          <p>By accessing and using the Villupuram Discovery Hub (&quot;Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.</p>
 
           <h2>2. User Accounts</h2>
           <p>When you create an account with us, you must provide accurate, complete, and current information. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Platform.</p>
@@ -47,7 +47,7 @@ export default function TermsPage() {
           </ul>
 
           <h2>3. Content Contributions</h2>
-          <p>Our Platform allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material ("Content"). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness.</p>
+          <p>Our Platform allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material (&quot;Content&quot;). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness.</p>
           <p>By posting Content to the Platform, you grant us the right and license to use, modify, publicly perform, publicly display, reproduce, and distribute such Content on and through the Service.</p>
 
           <h2>4. Prohibited Uses</h2>
@@ -55,7 +55,7 @@ export default function TermsPage() {
           <ul>
             <li>In any way that violates any applicable national or international law or regulation.</li>
             <li>For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way.</li>
-            <li>To transmit, or procure the sending of, any advertising or promotional material, including any "junk mail", "chain letter," "spam," or any other similar solicitation.</li>
+            <li>To transmit, or procure the sending of, any advertising or promotional material, including any &quot;junk mail&quot;, &quot;chain letter,&quot; &quot;spam,&quot; or any other similar solicitation.</li>
             <li>To impersonate or attempt to impersonate the Platform, a company employee, another user, or any other person or entity.</li>
           </ul>
 

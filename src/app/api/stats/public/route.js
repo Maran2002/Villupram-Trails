@@ -7,15 +7,15 @@ export async function GET() {
 
     const [
       totalPlaces, totalUsers, totalReviews,
-      monthlyVisitors
+      monthlyPageViews
     ] = await Promise.all([
       db.collection('places').countDocuments({ status: 'Approved' }),
-      db.collection('users').countDocuments({}),
+      db.collection('users').countDocuments({ role: { $ne: 'admin' } }),
       db.collection('reviews').countDocuments({ visible: true }),
-      // Unique visitors in last 30 days
-      db.collection('visitor_logs').distinct('ip', { 
+      // The tracker does not collect an IP or stable visitor identifier, so report page views.
+      db.collection('visitor_logs').countDocuments({
         timestamp: { $gte: new Date(Date.now() - 30 * 86400000) } 
-      }).then(res => res.length)
+      })
     ])
 
     return NextResponse.json({
@@ -24,7 +24,7 @@ export async function GET() {
         totalPlaces,
         totalUsers,
         totalReviews,
-        monthlyVisitors
+        monthlyPageViews
       }
     })
   } catch (error) {

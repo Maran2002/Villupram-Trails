@@ -16,21 +16,22 @@ export default function UserReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchReports()
-  }, [])
+    let active = true
 
-  const fetchReports = async () => {
-    try {
-      const { data } = await apiClient.get('/reports')
-      if (data.success) {
-        setReports(data.data)
+    const loadReports = async () => {
+      try {
+        const { data } = await apiClient.get('/reports')
+        if (active && data.success) setReports(data.data)
+      } catch (error) {
+        if (active) console.error('Failed to fetch reports:', error)
+      } finally {
+        if (active) setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch reports:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    loadReports()
+    return () => { active = false }
+  }, [])
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -67,7 +68,7 @@ export default function UserReportsPage() {
             </div>
             <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">No Reports Yet</h3>
             <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto mb-6">
-              You haven't submitted any reports. Helping maintain our community standards helps everyone!
+              You haven&apos;t submitted any reports. Helping maintain our community standards helps everyone!
             </p>
             <Button onClick={() => window.location.href = '/report'}>Raise a Report</Button>
           </div>
@@ -97,7 +98,7 @@ export default function UserReportsPage() {
                 </div>
 
                 <div className="bg-neutral-50 dark:bg-dark-900/50 rounded-2xl p-4 mb-4 border border-neutral-100 dark:border-dark-700">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 italic">"{report.description}"</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 italic">&quot;{report.description}&quot;</p>
                 </div>
 
                 {(report.actionTaken || report.actionReason) && (

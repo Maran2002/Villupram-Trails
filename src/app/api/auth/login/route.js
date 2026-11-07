@@ -2,29 +2,44 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+import { getJwtSecret } from '@/lib/auth'
+import { isSuperAdmin } from '@/lib/permissions'
 
 export async function POST(request) {
   try {
     const { email, password } = await request.json()
+    const jwtSecret = getJwtSecret()
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return NextResponse.json({ success: false, error: 'Email and password are required' }, { status: 400 })
+    }
     const db = await getDb()
 
-    const user = await db.collection('users').findOne({ email })
+    const user = await db.collection('users').findOne({ email: email.trim().toLowerCase() })
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
+    if (user.role === 'admin') {
+      return NextResponse.json({ success: false, error: 'Administrators must use the admin sign-in page' }, { status: 403 })
+    }
+
+    if (user.isVerified === false) {
+      return NextResponse.json({ success: false, error: 'Verify your email before signing in', code: 'EMAIL_NOT_VERIFIED' }, { status: 403 })
+    }
+
     // Include role in JWT payload so middleware can read it without a DB call
     const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role || 'user' },
-      JWT_SECRET,
+      { userId: user._id, email: user.email, role: user.role || 'user', sessionVersion: user.sessionVersion || 0 },
+      jwtSecret,
       { expiresIn: '7d' }
     )
 
     const { password: _, ...userWithoutPassword } = user
 
-    const response = NextResponse.json({ success: true, data: { token, user: userWithoutPassword } })
+    const response = NextResponse.json({
+      success: true,
+      data: { user: { ...userWithoutPassword, isSuperAdmin: isSuperAdmin(user) } },
+    })
 
     // Set HttpOnly cookie so the Edge middleware can read it
     response.cookies.set('auth_token', token, {

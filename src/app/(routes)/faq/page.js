@@ -13,34 +13,34 @@ const faqsData = {
   'Getting Started': [
     { id: 1, q: 'What is Villupuram Discovery Hub?', a: 'Villupuram Discovery Hub is a community-driven platform designed to help travelers explore both well-known tourist attractions and undiscovered hidden gems in and around the Villupuram district of Tamil Nadu.' },
     { id: 2, q: 'Is this platform free to use?', a: 'Yes! Exploring the directory, reading reviews, and using the maps is completely free for all users.' },
-    { id: 3, q: 'Do I need an account to browse places?', a: 'No, you do not need an account to browse destinations, view photos, or read reviews. However, you will need to register and verify your account if you wish to contribute reviews or add new places.' },
+    { id: 3, q: 'Do I need an account to browse places?', a: 'No, you do not need an account to browse destinations, view photos, or read reviews. You need an account to submit a place or review. Review submission also requires an administrator to mark your account as verified.' },
     { id: 13, q: 'Is there a mobile app available?', a: 'Currently, Villupuram Discovery Hub is a fully responsive web application, meaning it works beautifully on any mobile browser. A dedicated native app is in our future roadmap.' },
     { id: 14, q: 'How can I share a place with my friends?', a: 'Every destination page features a "Share" button that allows you to quickly copy the link or share it directly to social media platforms like WhatsApp and Facebook.' }
   ],
   'Verification': [
-    { id: 4, q: 'How do I verify my account?', a: "To verify your account, navigate to your Profile Settings and select 'Verification Status'. You will need to upload a valid government-issued ID. Our team typically processes verifications within 24-48 hours to ensure the safety of our elite community." },
-    { id: 5, q: 'Why do I need to be verified?', a: 'We require verification to maintain a high-quality, spam-free environment. Verification ensures that all reviews and new place submissions come from authentic travelers and locals, preserving the integrity of the platform.' },
-    { id: 15, q: 'Is my uploaded ID kept secure?', a: 'Absolutely. We use enterprise-grade encryption to process your verification documents. Once your identity is verified, the uploaded documents are permanently deleted from our active servers for your privacy.' },
+    { id: 4, q: 'How do I verify my account?', a: 'Verification is managed by an administrator. There is no self-service identity document upload or verification request workflow in the site right now. Contact the community team if you need help.' },
+    { id: 5, q: 'Why do I need to be verified?', a: 'Verified accounts can submit reviews. Place submissions require an account and follow the current moderation setting, but do not require verification.' },
+    { id: 15, q: 'Is my uploaded ID kept secure?', a: 'The site does not currently accept identity document uploads for verification.' },
     { id: 16, q: 'Can I be un-verified?', a: 'Yes, if an account violates our Community Guidelines repeatedly, verification status may be revoked and the account suspended.' }
   ],
   'Contributions': [
-    { id: 6, q: 'How do I add a new place to the directory?', a: "Verified members can contribute by clicking the 'Add Place' button in their dashboard. You will be prompted to provide high-quality imagery, accurate location data, opening hours, and a detailed description adhering to our editorial guidelines." },
-    { id: 7, q: 'Will my submitted place be published immediately?', a: 'No. All new place submissions go into our Admin Approval Queue. Our editorial team reviews the submission for accuracy, image quality, and appropriate formatting before it goes live on the platform.' },
-    { id: 8, q: 'What kind of photos should I upload?', a: 'We require high-resolution, unwatermarked, landscape-oriented photos that clearly show the destination. Avoid heavily filtered selfies or blurry images.' },
+    { id: 6, q: 'How do I add a new place to the directory?', a: "Sign in and use the 'Add Place' form in your dashboard. Provide the destination name, category, description and location. Submissions follow the site's current moderation setting." },
+    { id: 7, q: 'Will my submitted place be published immediately?', a: 'Publication depends on the current moderation setting. When manual approval is enabled, a submission remains pending until an administrator reviews it.' },
+    { id: 8, q: 'Can I upload destination photos?', a: 'The current contribution form can accept image data or image URLs, but the site does not provide a managed photo upload or hosting service. Only use images you have permission to share.' },
     { id: 17, q: 'Can I edit a place I already submitted?', a: 'Yes, you can suggest edits to places you have submitted. These edits will also go through a brief approval process to maintain data integrity.' },
-    { id: 18, q: 'Do I get credit for adding a place?', a: 'Yes! Places you discover and successfully add to the platform will feature your profile as the "Discovered By" or "Curator" badge.' }
+    { id: 18, q: 'Do I get credit for adding a place?', a: 'Your account is recorded as the place submitter and you can track your contributions in the dashboard. Public curator badges are not currently implemented.' }
   ],
   'Reviews': [
     { id: 9, q: 'What are the guidelines for reviews?', a: 'We value authentic, detailed, and respectful reviews. Please focus on the unique aspects of your experience, the quality of service, and the atmosphere. Avoid brief generic statements. All reviews are subject to moderation.' },
     { id: 10, q: 'Can I edit or delete my review?', a: 'Yes. You can manage your published reviews from your personalized User Dashboard. Edits may temporarily hide the review until re-approved by moderation.' },
-    { id: 19, q: 'Why was my review rejected?', a: 'Reviews may be rejected if they contain inappropriate language, spam, personally identifiable information, or if they violate our Community Guidelines. You will receive an email explaining the specific reason.' },
-    { id: 20, q: 'Can I reply to a review?', a: 'Currently, only the administrative team and the official business owner (if claimed) can reply directly to user reviews.' }
+    { id: 19, q: 'Why was my review hidden?', a: 'An administrator may hide a review during moderation. Review status is visible in your dashboard; automatic email explanations are not currently sent.' },
+    { id: 20, q: 'Can I reply to a review?', a: 'Review replies are not currently available.' }
   ],
   'Account': [
-    { id: 11, q: 'How do I reset my password?', a: 'Click the "Forgot Password" link on the login page and enter your registered email address. We will send you instructions to securely reset your password.' },
-    { id: 12, q: 'How can I delete my account?', a: 'To permanently delete your account and remove your data, please contact our support team using the form below. For security reasons, deletion requests are handled manually.' },
+    { id: 11, q: 'How do I reset my password?', a: 'A self-service forgotten-password email flow is not currently available. If you can sign in, change your password in Profile. Otherwise, contact the community team to request help.' },
+    { id: 12, q: 'How can I delete my account?', a: 'Account deletion is not self-service. Contact the community team with your request; the contact form records a support ticket but does not automatically delete account data.' },
     { id: 21, q: 'Can I change my username?', a: 'Yes, you can change your display name in your Profile Settings. Note that your display name is what other users see on your reviews and contributions.' },
-    { id: 22, q: 'How do I manage my email preferences?', a: 'You can opt in or out of marketing emails, newsletters, and contribution updates from the "Notifications" tab within your Account Settings.' }
+    { id: 22, q: 'How are newsletter emails used?', a: 'When you submit your email through the updates form, it is stored for administrators to view. The site does not currently send automated emails or provide email preference or unsubscribe controls.' }
   ]
 }
 
@@ -366,7 +366,7 @@ export default function FAQPage() {
                   className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl flex items-center gap-3"
                 >
                   <Check size={20} />
-                  Your message has been sent successfully! Our team will reach out soon.
+                  Your message has been added to the support queue. Automatic email replies are not currently available.
                 </motion.div>
               )}
               

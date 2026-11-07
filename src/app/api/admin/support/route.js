@@ -11,21 +11,27 @@ export async function GET(request) {
     if (!hasPermission(user, 'support', 'view')) return forbidden()
 
     const { searchParams } = new URL(request.url)
-    const page   = Math.max(1, parseInt(searchParams.get('page')) || 1)
-    const limit  = Math.min(50, parseInt(searchParams.get('limit')) || 20)
+    const requestedPage = Number.parseInt(searchParams.get('page') || '1', 10)
+    const requestedLimit = Number.parseInt(searchParams.get('limit') || '20', 10)
+    const page = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1
+    const limit = Number.isFinite(requestedLimit) ? Math.min(50, Math.max(1, requestedLimit)) : 20
     const status = searchParams.get('status')
-    const search = searchParams.get('search')
+    const search = (searchParams.get('search') || '').trim().slice(0, 80)
+    if (status && !['all', 'open', 'in-progress', 'closed'].includes(status)) {
+      return NextResponse.json({ success: false, error: 'Invalid ticket status' }, { status: 400 })
+    }
 
     const db = await getDb()
     const query = {}
 
     if (status && status !== 'all') query.status = status
     if (search) {
+      const safeSearch = search.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$or = [
-        { name:    { $regex: search, $options: 'i' } },
-        { email:   { $regex: search, $options: 'i' } },
-        { message: { $regex: search, $options: 'i' } },
-        { topic:   { $regex: search, $options: 'i' } },
+        { name:    { $regex: safeSearch, $options: 'i' } },
+        { email:   { $regex: safeSearch, $options: 'i' } },
+        { message: { $regex: safeSearch, $options: 'i' } },
+        { topic:   { $regex: safeSearch, $options: 'i' } },
       ]
     }
 
@@ -58,6 +64,7 @@ export async function PATCH(request) {
 
     const { id, status } = await request.json()
     if (!ObjectId.isValid(id)) return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 })
+    if (!['open', 'in-progress', 'closed'].includes(status)) return NextResponse.json({ success: false, error: 'Invalid ticket status' }, { status: 400 })
 
     const db = await getDb()
     const result = await db.collection('support_tickets').findOneAndUpdate(

@@ -5,12 +5,14 @@ import { usePlaces } from '@/lib/hooks/usePlaces'
 import { useFilterStore } from '@/lib/store/filterStore'
 
 export function PlaceGrid() {
-  const { category, search } = useFilterStore()
+  const { category, search, featured, trending } = useFilterStore()
   const { data, loading, error } = usePlaces(
     1,
     12,
     category === 'all' ? null : category,
-    search || null
+    search || null,
+    featured || null,
+    trending || null
   )
 
   if (loading) {

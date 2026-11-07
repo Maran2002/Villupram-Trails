@@ -27,10 +27,22 @@ export async function POST(request) {
   try {
     const user = await getAuthUser(request)
     const body = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ success: false, error: 'Invalid report data' }, { status: 400 })
+    }
     const { type, targetId, reason, description, email, name } = body
 
-    if (!type || !reason || !description) {
+    if (!['review', 'place', 'user', 'other'].includes(type)
+      || typeof reason !== 'string' || !reason.trim() || reason.length > 80
+      || typeof description !== 'string' || description.trim().length < 5 || description.length > 5000) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
+    }
+    if (type !== 'other' && !targetId) {
+      return NextResponse.json({ success: false, error: 'A target is required for this report type' }, { status: 400 })
+    }
+    if (targetId && !ObjectId.isValid(targetId)) return NextResponse.json({ success: false, error: 'Invalid target ID' }, { status: 400 })
+    if (!user && email && (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      return NextResponse.json({ success: false, error: 'Invalid email address' }, { status: 400 })
     }
 
     const db = await getDb()
@@ -44,8 +56,8 @@ export async function POST(request) {
       actionTaken: '',
       actionReason: '',
       reporterId: user ? user._id : null,
-      reporterName: user ? user.username : (name || 'Guest'),
-      reporterEmail: user ? user.email : (email || 'anonymous'),
+      reporterName: user ? user.username : (typeof name === 'string' ? name.trim().slice(0, 100) : 'Guest'),
+      reporterEmail: user ? user.email : (typeof email === 'string' ? email.trim().toLowerCase().slice(0, 254) : 'anonymous'),
       createdAt: new Date(),
       updatedAt: new Date()
     }

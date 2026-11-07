@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Flag, Clock, CheckCircle2, AlertCircle, 
@@ -16,8 +16,11 @@ import toast from 'react-hot-toast'
 import { WithPermission, Perm } from '@/components/admin/WithPermission'
 
 export default function AdminReportsPage() {
+  const LIMIT = 20
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [selectedReport, setSelectedReport] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeStatus, setActiveStatus] = useState('all')
@@ -29,22 +32,27 @@ export default function AdminReportsPage() {
   })
   const [isUpdating, setIsUpdating] = useState(false)
 
-  useEffect(() => {
-    fetchReports()
-  }, [])
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async (requestedPage = page) => {
+    setLoading(true)
     try {
-      const { data } = await apiClient.get('/admin/reports')
+      const { data } = await apiClient.get('/admin/reports', {
+        params: { page: requestedPage, limit: LIMIT, status: activeStatus, search: searchQuery },
+      })
       if (data.success) {
-        setReports(data.data)
+        setReports(data.data || [])
+        setTotal(data.meta?.total || 0)
       }
     } catch (error) {
       toast.error('Failed to load reports')
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeStatus, page, searchQuery])
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchReports(page), searchQuery ? 250 : 0)
+    return () => clearTimeout(timer)
+  }, [fetchReports, page, searchQuery])
 
   const handleUpdate = async (e) => {
     e.preventDefault()
@@ -56,7 +64,7 @@ export default function AdminReportsPage() {
       })
       if (data.success) {
         toast.success('Report updated successfully')
-        fetchReports()
+        fetchReports(page)
         setSelectedReport(null)
       }
     } catch (error) {
@@ -66,18 +74,7 @@ export default function AdminReportsPage() {
     }
   }
 
-  const filteredReports = useMemo(() => {
-    return reports.filter(report => {
-      const matchesStatus = activeStatus === 'all' || report.status === activeStatus
-      const matchesSearch = 
-        report.reporterName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.reason?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      
-      return matchesStatus && matchesSearch
-    })
-  }, [reports, activeStatus, searchQuery])
+  const pageCount = Math.max(1, Math.ceil(total / LIMIT))
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -106,7 +103,7 @@ export default function AdminReportsPage() {
                 type="text"
                 placeholder="Search reports..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
                 className="w-full bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-700 rounded-2xl py-2.5 pl-12 pr-4 text-sm focus:outline-none focus:border-primary-500 transition-all shadow-sm"
               />
             </div>
@@ -114,7 +111,7 @@ export default function AdminReportsPage() {
               {['all', 'pending', 'open', 'closed'].map((status) => (
                 <button
                   key={status}
-                  onClick={() => setActiveStatus(status)}
+                  onClick={() => { setActiveStatus(status); setPage(1) }}
                   className={`flex-1 sm:flex-none px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                     activeStatus === status 
                       ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' 
@@ -129,27 +126,27 @@ export default function AdminReportsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          {filteredReports.length === 0 ? (
+          {reports.length === 0 ? (
             <div className="bg-white dark:bg-dark-800 rounded-[2.5rem] p-20 text-center border border-neutral-200 dark:border-dark-700 shadow-sm">
               <div className="w-20 h-20 bg-neutral-50 dark:bg-dark-900 rounded-3xl flex items-center justify-center mx-auto mb-6 text-neutral-300">
                 <Inbox size={40} />
               </div>
               <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">No Reports Found</h3>
               <p className="text-neutral-500 dark:text-neutral-400 max-w-xs mx-auto">
-                We couldn't find any reports matching your current filter criteria.
+                We couldn&apos;t find any reports matching your current filter criteria.
               </p>
               {(activeStatus !== 'all' || searchQuery) && (
                 <Button 
                   variant="outline" 
                   className="mt-8 rounded-xl"
-                  onClick={() => { setActiveStatus('all'); setSearchQuery('') }}
+                  onClick={() => { setActiveStatus('all'); setSearchQuery(''); setPage(1) }}
                 >
                   Clear all filters
                 </Button>
               )}
             </div>
           ) : (
-            filteredReports.map((report) => (
+            reports.map((report) => (
               <motion.div 
                 key={report._id}
                 initial={{ opacity: 0, y: 10 }}
@@ -193,7 +190,7 @@ export default function AdminReportsPage() {
                 </div>
 
                 <div className="mt-6 p-5 bg-neutral-50 dark:bg-dark-900/50 rounded-2xl border border-neutral-100 dark:border-dark-700">
-                  <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed italic">"{report.description}"</p>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed italic">&quot;{report.description}&quot;</p>
                   {report.targetId && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-primary-500 font-bold uppercase tracking-widest">
                       <ExternalLink size={12} /> Target ID: {report.targetId}
@@ -209,6 +206,14 @@ export default function AdminReportsPage() {
               </motion.div>
             ))
           )}
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-5 py-3 dark:border-dark-700 dark:bg-dark-800">
+          <span className="text-xs text-neutral-500">{total.toLocaleString()} reports · Page {Math.min(page, pageCount)} of {pageCount}</span>
+          <div className="flex gap-2">
+            <button aria-label="Previous page" disabled={page <= 1 || loading} onClick={() => setPage((current) => Math.max(1, current - 1))} className="rounded-lg border border-neutral-200 p-2 text-neutral-600 disabled:opacity-40 dark:border-dark-600 dark:text-neutral-300"><ChevronDown size={16} className="rotate-90" /></button>
+            <button aria-label="Next page" disabled={page >= pageCount || loading} onClick={() => setPage((current) => current + 1)} className="rounded-lg border border-neutral-200 p-2 text-neutral-600 disabled:opacity-40 dark:border-dark-600 dark:text-neutral-300"><ChevronDown size={16} className="-rotate-90" /></button>
+          </div>
         </div>
 
         {/* Action Modal */}
@@ -255,6 +260,7 @@ export default function AdminReportsPage() {
                       value={updateForm.actionTaken}
                       onChange={(e) => setUpdateForm({...updateForm, actionTaken: e.target.value})}
                       placeholder="e.g. Removed review, Warned user"
+                      maxLength={500}
                       className="w-full bg-neutral-50 dark:bg-dark-900 border border-neutral-200 dark:border-dark-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-500"
                     />
                   </div>
@@ -263,6 +269,7 @@ export default function AdminReportsPage() {
                     <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Resolution Message (Public)</label>
                     <textarea 
                       rows={4}
+                      maxLength={2000}
                       value={updateForm.actionReason}
                       onChange={(e) => setUpdateForm({...updateForm, actionReason: e.target.value})}
                       placeholder="Provide a detailed explanation for the reporter..."

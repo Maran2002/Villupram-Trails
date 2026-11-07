@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   MessageSquare, Search, Filter, RefreshCw, 
   ChevronLeft, ChevronRight, CheckCircle2, 
@@ -42,6 +42,7 @@ export default function AdminSupportPage() {
   const [expandedId, setExpandedId] = useState(null)
   
   const LIMIT = 10
+  const searchRef = useRef(search)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -64,12 +65,34 @@ export default function AdminSupportPage() {
     }
   }, [token, search, status])
 
-  useEffect(() => { setPage(1); load(1) }, [status])
+  useEffect(() => {
+    let active = true
+    const loadTickets = async () => {
+      const t = token || localStorage.getItem('auth_token')
+      const params = new URLSearchParams({ page: 1, limit: LIMIT, status, search: searchRef.current })
+      try {
+        const res = await fetch(`/api/admin/support?${params}`, { headers: { Authorization: `Bearer ${t}` } })
+        const d = await res.json()
+        if (active && d.success) {
+          setTickets(d.data || [])
+          setTotal(d.meta?.total || 0)
+        }
+      } catch {
+        if (active) toast.error('Failed to load support tickets')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    loadTickets()
+    return () => { active = false }
+  }, [status, token])
+
+  useEffect(() => { searchRef.current = search }, [search])
 
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); load(1) }, 400)
     return () => clearTimeout(t)
-  }, [search])
+  }, [search, load])
 
   const handleUpdateStatus = async (id, newStatus) => {
     setUpdating(id)
@@ -150,7 +173,7 @@ export default function AdminSupportPage() {
             {['all', 'open', 'in-progress', 'closed'].map(s => (
               <button 
                 key={s} 
-                onClick={() => setStatus(s)}
+                onClick={() => { setPage(1); setLoading(true); setStatus(s) }}
                 className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all capitalize ${status === s ? 'bg-primary-500 text-white shadow-md' : 'text-neutral-500 hover:bg-neutral-50 dark:hover:bg-dark-700'}`}
               >
                 {s.replace('-', ' ')}

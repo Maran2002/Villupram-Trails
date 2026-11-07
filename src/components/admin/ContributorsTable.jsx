@@ -27,13 +27,11 @@ export function ContributorsTable() {
     setLoading(false)
   }, [token, search])
 
-  useEffect(() => { load(1, '') }, [token])
-
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => { setPage(1); load(1, search) }, 400)
     return () => clearTimeout(timer)
-  }, [search])
+  }, [search, load])
 
   const pages = Math.ceil(total / LIMIT)
 

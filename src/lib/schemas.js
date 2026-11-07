@@ -7,6 +7,7 @@
  */
 
 import { ObjectId } from 'mongodb'
+import { sanitizePermissions } from './permissions'
 
 /* ─── Constants ─────────────────────────────────────────────── */
 export const VALID_CATEGORIES    = ['Heritage', 'Nature', 'Temple', 'Food', 'Beach', 'Adventure', 'Other']
@@ -20,6 +21,29 @@ function str(v, fallback = '')      { return typeof v === 'string' ? v.trim() : 
 function float(v)                   { const n = parseFloat(v); return isNaN(n) ? undefined : n }
 function clamp(v, min, max)         { return Math.min(Math.max(Number(v) || 0, min), max) }
 function filterArr(arr, valid)      { return Array.isArray(arr) ? arr.filter(i => valid.includes(i)) : [] }
+
+function filterImages(value) {
+  if (!Array.isArray(value)) return []
+  let totalBytes = 0
+  const images = []
+  for (const candidate of value) {
+    if (typeof candidate !== 'string') continue
+    let accepted = false
+    if (candidate.startsWith('https://') && candidate.length <= 2048) {
+      try { accepted = new URL(candidate).protocol === 'https:' } catch {}
+    } else if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(candidate)) {
+      const encoded = candidate.slice(candidate.indexOf(',') + 1)
+      const bytes = Math.floor(encoded.length * 3 / 4)
+      if (bytes <= 1024 * 1024 && totalBytes + bytes <= 4 * 1024 * 1024) {
+        totalBytes += bytes
+        accepted = true
+      }
+    }
+    if (accepted) images.push(candidate)
+    if (images.length === 10) break
+  }
+  return images
+}
 
 /** Sanitise the visitingHoursMeta sub-document */
 function visitingHoursMeta(raw) {
@@ -86,14 +110,10 @@ export function buildPlaceDoc(body, submitter, forceStatus) {
   const amenities  = filterArr(body.amenities, VALID_AMENITIES)
 
   // Images — accept http(s) URLs and base64 data URIs, max 10
-  const images     = (Array.isArray(body.images) ? body.images : [])
-    .filter(u => typeof u === 'string' && (u.startsWith('http') || u.startsWith('data:image/')))
-    .slice(0, 10)
+  const images     = filterImages(body.images)
 
   // Status
-  const statusInput = str(body.status)
-  const status = forceStatus
-    || (VALID_STATUSES.includes(statusInput) ? statusInput : 'Pending')
+  const status = forceStatus || 'Pending'
 
   const doc = {
     name, category,
@@ -107,8 +127,8 @@ export function buildPlaceDoc(body, submitter, forceStatus) {
     amenities,
     images,
     status,
-    isTrending  : !!body.isTrending,
-    isFeatured  : !!body.isFeatured,
+    isTrending  : false,
+    isFeatured  : false,
     rating      : 0,
     reviewCount : 0,
     ...(submitter ? { submittedBy: { userId: submitter._id, username: submitter.username } } : {}),
@@ -142,7 +162,7 @@ export function buildPlacePatch(body, { isAdmin } = {}) {
   if ('fullDescription' in body)  patch.fullDescription = str(body.fullDescription)
   if ('entryFee' in body)         patch.entryFee = str(body.entryFee).replace(/[<>]/g, '').slice(0, 200)
   if ('amenities' in body)        patch.amenities = filterArr(body.amenities, VALID_AMENITIES)
-  if ('images' in body)           patch.images = (body.images || []).filter(u => typeof u === 'string' && (u.startsWith('http') || u.startsWith('data:image/'))).slice(0, 10)
+  if ('images' in body)           patch.images = filterImages(body.images)
 
   if ('visitingHoursMeta' in body || 'visitingHours_meta' in body) {
     const meta = visitingHoursMeta(body.visitingHoursMeta || body.visitingHours_meta)
@@ -198,24 +218,29 @@ export function buildReviewDoc(body, user, placeObjectId) {
 
 /* ─── User schema ───────────────────────────────────────────── */
 
-export function buildUserDoc({ email, username, hashedPassword, role = 'user', permissions = {} }) {
+export function buildUserDoc({ email, username, hashedPassword, role = 'user', permissions = {}, isVerified = true }) {
   const errors = []
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('invalid email')
   if (!username || username.length < 3) errors.push('username must be at least 3 characters')
   if (!hashedPassword) errors.push('password hash required')
 
+  if (!['admin', 'user'].includes(role)) errors.push('role must be admin or user')
+  const permissionResult = role === 'admin' ? sanitizePermissions(permissions) : { permissions: {}, error: null }
+  if (permissionResult.error) errors.push(permissionResult.error)
+
   const doc = {
     email     : str(email).toLowerCase(),
     username  : str(username),
     password  : hashedPassword,
+    sessionVersion: 0,
     role      : ['admin', 'user'].includes(role) ? role : 'user',
-    isVerified: false,
+    isVerified,
     contributions: { placesAdded: 0, reviewsWritten: 0, photosUploaded: 0 },
     createdAt : new Date(),
   }
   
   if (doc.role === 'admin') {
-    doc.permissions = permissions;
+    doc.permissions = permissionResult.permissions || {};
   }
 
   return { doc, errors }
@@ -238,12 +263,16 @@ export function buildUserPatch(body) {
   if ('role' in body) {
     const v = str(body.role)
     if (['admin', 'user'].includes(v)) patch.role = v
+    else errors.push('role must be admin or user')
   }
   if ('permissions' in body) {
-    patch.permissions = body.permissions || {}
+    const result = sanitizePermissions(body.permissions)
+    if (result.error) errors.push(result.error)
+    else patch.permissions = result.permissions
   }
   if ('isVerified' in body) {
-    patch.isVerified = !!body.isVerified
+    if (typeof body.isVerified !== 'boolean') errors.push('isVerified must be a boolean')
+    else patch.isVerified = body.isVerified
   }
 
   return { patch, errors }
@@ -252,15 +281,22 @@ export function buildUserPatch(body) {
 /* ─── Visitor Log schema ────────────────────────────────────── */
 
 export function buildVisitorLog(data) {
+  const rawPath = str(data.path, '/')
+  const path = rawPath.startsWith('/') && !rawPath.startsWith('//')
+    ? rawPath.split(/[?#]/, 1)[0].slice(0, 500) || '/'
+    : '/'
+  let referer = ''
+  try {
+    const parsedReferer = new URL(str(data.referer))
+    if (parsedReferer.protocol === 'http:' || parsedReferer.protocol === 'https:') referer = parsedReferer.origin
+  } catch {}
+
   return {
-    path: str(data.path, '/'),
-    userAgent: str(data.userAgent, 'unknown'),
-    ip: str(data.ip, 'unknown'),
-    referer: str(data.referer, ''),
-    device: str(data.device, 'desktop'),
-    browser: str(data.browser, 'unknown'),
-    os: str(data.os, 'unknown'),
-    screenSize: str(data.screenSize, 'unknown'),
+    path,
+    referer,
+    device: ['mobile', 'tablet', 'desktop'].includes(data.device) ? data.device : 'unknown',
+    browser: ['Chrome', 'Firefox', 'Safari', 'Edge', 'Other'].includes(data.browser) ? data.browser : 'unknown',
+    os: ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'Other'].includes(data.os) ? data.os : 'unknown',
     timestamp: new Date(),
   }
 }

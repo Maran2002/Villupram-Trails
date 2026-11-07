@@ -13,19 +13,19 @@ This project is **open-sourced and open to contributions!** We welcome developer
 ### 🛡️ Security & Access Control (RBAC)
 - **Granular Permissions**: Implemented a robust Role-Based Access Control (RBAC) system using a centralized `hasPermission` engine.
 - **Superadmin Authority**: Hardened the platform with a `SUPERADMIN_ID` level, ensuring critical administrative actions are restricted.
-- **AES-256 Encryption**: Integrated CryptoJS into local storage persistence for client-side data security.
-- **Automated Session Recovery**: Global API interceptors detect token expiry (401 errors) and synchronize UI state.
+- **Cookie Sessions**: Authentication uses an HttpOnly session cookie; server routes enforce authorization.
+- **Session Recovery**: The client checks the cookie-backed session and clears stale legacy browser auth state.
 
 ### 🎧 Support & Community Management
 - **Centralized Support Hub**: New administrative dashboard to manage user inquiries from the Contact and FAQ pages with status tracking.
-- **Email Integration**: Integrated mail-to shortcuts for admins to respond directly to community inquiries.
+- **Support Queue**: Contact and FAQ forms store support requests for admin handling. Automatic email replies are not configured.
 - **Content Moderation Toggles**: Global switches for "Automatic Approvals" vs "Manual Moderation" for both new places and community reviews.
 
 ### 🚩 Content Curation & Integrity
 - **Curated Feeds**: New "Trending" (🔥) and "Featured" (⭐) toggles allowing admins to hand-pick destinations for the homepage.
 - **Enhanced Places Management**: Dedicated "Requests" tab for handling submissions with a side-by-side diff view of changes.
 - **Admin Audit Trail**: Comprehensive logging for all administrative actions, including approvals and settings modifications.
-- **Visitor Insights**: Real-time visitor tracking and logging system providing traffic analytics.
+- **Visitor Insights**: New page-view records store the path, referrer origin, and coarse device/browser/OS labels; they omit IP addresses, raw user-agent strings, and screen dimensions.
 - **Global Admin Search**: Intelligent, fuzzy search for deep-linking across Users, Places, Reviews, and Navigation.
 
 ### 🏗️ Architectural Refinements
@@ -43,7 +43,7 @@ When a user visits the platform, they can explore detailed listings of various d
 
 **Interactivity & Contributions:**
 - If a user has already visited a place, they can add their own reviews and photos.
-- To maintain community safety and content quality, **only verified accounts** are able to submit reviews.
+- To maintain community safety and content quality, **only accounts verified by an administrator** can submit reviews. No identity document upload workflow is provided.
 - Users can register and create an account to add completely unseen or new places to the directory.
 - Contributors get access to a **separate personalized dashboard** where they can track and manage all their contributions (reviews, places added, and approval statuses).
 
@@ -54,7 +54,7 @@ This project is built using a modern, scalable JavaScript stack optimized for se
 - **Frontend:** Next.js (App Router), React, Tailwind CSS, Framer Motion
 - **Backend:** Next.js API Route Handlers, Node.js
 - **Database:** MongoDB (Native Driver for optimal serverless connection pooling)
-- **Security:** AES-256 Encryption (CryptoJS), JWT Authentication, Bcrypt hashing
+- **Security:** HttpOnly cookie sessions, JWT signing, Bcrypt password hashing, server-side permissions
 - **Icons:** Lucide React
 - **Hosting/Deployment:** Ready for Vercel
 
@@ -64,22 +64,28 @@ This project is built using a modern, scalable JavaScript stack optimized for se
 You will need a MongoDB instance (local or Atlas) to run the application.
 
 1. Clone the repository.
-2. Copy `.env.local.example` (or create `.env.local`) and add your MongoDB URI and JWT Secret:
+2. Copy `.env.example` to `.env.local`, generate unique secrets, and configure your MongoDB URI and site URL:
    ```env
    MONGODB_URI="mongodb://127.0.0.1:27017/villupuram_db"
-   JWT_SECRET="your_super_secret_key_here"
-   NEXT_PUBLIC_API_BASE_URL="http://localhost:3000/api"
+   JWT_SECRET="<generate-a-unique-secret-of-at-least-32-characters>"
+   ADMIN_ACCESS_TOKEN="<generate-a-separate-random-token>"
+   NEXT_PUBLIC_SITE_URL="https://your-production-domain.example"
+   BREVO_API_KEY="<server-side Brevo API key>"
+   BREVO_SENDER_EMAIL="<verified Brevo sender address>"
+   BREVO_SENDER_NAME="Villupuram Trails"
+   EMAIL_OTP_SECRET="<optional dedicated random secret for OTP hashing>"
+   GOOGLE_MAPS_API_KEY="<server-side key restricted to Geocoding and Static Maps APIs>"
    ```
+   Generate each value with `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`. Do not deploy the placeholders.
+   Configure a verified sender in Brevo. The server uses its transactional email API for registration verification and password reset codes; the API key remains server-only. Codes expire after 10 minutes, allow up to 5 attempts, and are limited to 5 sends per account per 24 hours with a 60-second resend cooldown. Legacy accounts with no `isVerified` field retain access; new self-registrations must verify before login. Set a dedicated `EMAIL_OTP_SECRET` or the code HMAC uses `JWT_SECRET`.
+   Google Maps keys are read only on the server. Restrict the key to the Static Maps and Geocoding APIs and to the server's allowed network/IP where supported. Map previews are served through a same-origin image route; reverse geocoding is available to signed-in users.
 3. Install dependencies:
    ```bash
    npm install
    ```
-4. Seed the database with initial admin users and placeholder places:
-   ```bash
-   node scripts/seed.js
-   node scripts/seed_logs.js # Optional: for analytics testing
-   ```
-5. Run the development server:
+4. For an empty database, configure `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_EMAIL`, and `INITIAL_ADMIN_PASSWORD` (at least 12 characters), then run `node scripts/create-admin.mjs` once. The script requires an explicit `MONGODB_URI`, refuses to run when an admin already exists, and does not print credentials. Set the printed account ID as `SUPERADMIN_ID`, restart the application, then remove the one-time bootstrap credentials from the environment.
+5. Review `scripts/setup-indexes.mjs` before running it. Set `INDEX_SETUP_TARGET=local`, `staging`, `atlas`, or `production` alongside the intended `MONGODB_URI`. Local requires a loopback URI; Atlas requires `ALLOW_ATLAS_INDEX_SETUP=true`; production requires `ALLOW_PRODUCTION_INDEX_SETUP=true`. Back up the intended database first, then verify its index inventory and TTL results. Configure backups, retention, and monitoring for your deployment.
+6. Run the development server:
    ```bash
    npm run dev
    ```

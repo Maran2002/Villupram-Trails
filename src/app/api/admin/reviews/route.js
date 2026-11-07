@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 
 export async function GET(request) {
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
-    if (user.role !== 'admin') return forbidden()
+    if (!hasPermission(user, 'reviews', 'view')) return forbidden()
 
     const { searchParams } = new URL(request.url)
     const page   = Math.max(1, parseInt(searchParams.get('page'))  || 1)
@@ -18,9 +19,10 @@ export async function GET(request) {
     const query = {}
 
     if (search) {
+      const safeSearch = search.slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       query.$or = [
-        { author:  { $regex: search, $options: 'i' } },
-        { comment: { $regex: search, $options: 'i' } },
+        { author:  { $regex: safeSearch, $options: 'i' } },
+        { comment: { $regex: safeSearch, $options: 'i' } },
       ]
     }
     
