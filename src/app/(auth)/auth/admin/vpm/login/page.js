@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/lib/store'
-import { Lock, User, Eye, EyeOff, Shield, KeyRound } from 'lucide-react'
+import { Lock, User, Eye, EyeOff, Shield, KeyRound, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AdminLoginPage() {
@@ -115,8 +115,9 @@ export default function AdminLoginPage() {
                 <p className="text-neutral-500 text-xs text-center mb-7">Username and password required</p>
 
                 {loginError && (
-                  <div role="alert" aria-live="assertive" className="mb-4 rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm font-medium text-red-300">
-                    {loginError}
+                  <div role="alert" aria-live="assertive" className="mb-4 rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm font-medium text-red-300 flex items-center gap-2.5">
+                    <AlertCircle size={16} className="shrink-0 text-red-400" />
+                    <span>{loginError}</span>
                   </div>
                 )}
 

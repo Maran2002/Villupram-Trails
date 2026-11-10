@@ -25,13 +25,30 @@ export async function GET(request) {
       ? await db.collection('reviews').find({ visible: false }).toArray()
       : []
 
+    // Populate place information for review moderation
+    let reviewsWithPlace = hiddenReviews
+    if (hiddenReviews.length > 0) {
+      const placeIds = [...new Set(hiddenReviews.map(r => r.placeId).filter(Boolean))]
+      const objectPlaceIds = placeIds.map(id => typeof id === 'string' && ObjectId.isValid(id) ? new ObjectId(id) : id)
+      const places = await db.collection('places').find({ _id: { $in: objectPlaceIds } }).project({ name: 1 }).toArray()
+      const placeMap = new Map(places.map(p => [p._id.toString(), p.name]))
+      reviewsWithPlace = hiddenReviews.map(r => {
+        const placeName = r.placeId ? placeMap.get(r.placeId.toString()) : undefined
+        return {
+          ...r,
+          name: placeName ? `Review: ${placeName}` : (r.author ? `Review by ${r.author}` : 'Review'),
+          placeName,
+        }
+      })
+    }
+
     const items = [
       ...pendingPlaces.map(p => ({ 
         ...p, 
         type: 'Place', 
         isUpdate: p.status === 'Approved' && !!p.pendingUpdate 
       })),
-      ...hiddenReviews.map(r => ({ ...r, type: 'Review' })),
+      ...reviewsWithPlace.map(r => ({ ...r, type: 'Review' })),
     ]
 
     return NextResponse.json({ success: true, data: items })

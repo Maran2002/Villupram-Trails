@@ -10,26 +10,46 @@ import {
 import { Button } from '@/components/common/Button'
 import apiClient from '@/lib/api'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import { ErrorState } from '@/components/common/ErrorState'
 
 export default function UserReportsPage() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const loadReports = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data } = await apiClient.get('/reports')
+      if (data.success) setReports(data.data)
+    } catch (err) {
+      console.error('Failed to fetch reports:', err)
+      setError(err.message || 'Failed to fetch reports')
+      toast.error('Failed to load reports')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     let active = true
-
-    const loadReports = async () => {
-      try {
-        const { data } = await apiClient.get('/reports')
+    apiClient.get('/reports')
+      .then(({ data }) => {
         if (active && data.success) setReports(data.data)
-      } catch (error) {
-        if (active) console.error('Failed to fetch reports:', error)
-      } finally {
+      })
+      .catch((err) => {
+        if (active) {
+          console.error('Failed to fetch reports:', err)
+          setError(err.message || 'Failed to fetch reports')
+          toast.error('Failed to load reports')
+        }
+      })
+      .finally(() => {
         if (active) setLoading(false)
-      }
-    }
+      })
 
-    loadReports()
     return () => { active = false }
   }, [])
 
@@ -61,7 +81,15 @@ export default function UserReportsPage() {
           <p className="text-neutral-500 dark:text-neutral-400 text-sm">Track the status of your integrity reports and moderation outcomes.</p>
         </div>
 
-        {reports.length === 0 ? (
+        {error ? (
+          <ErrorState
+            variant="section"
+            title="Failed to Load Reports"
+            message={error}
+            onRetry={loadReports}
+            retryText="Try Again"
+          />
+        ) : reports.length === 0 ? (
           <div className="bg-white dark:bg-dark-800 rounded-3xl p-12 text-center border border-neutral-200 dark:border-dark-700">
             <div className="w-16 h-16 bg-neutral-50 dark:bg-dark-900 rounded-2xl flex items-center justify-center mx-auto mb-4 text-neutral-300">
               <Flag size={32} />

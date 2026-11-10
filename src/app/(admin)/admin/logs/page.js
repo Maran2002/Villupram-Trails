@@ -10,6 +10,8 @@ import {
 } from 'recharts'
 import { useAuthStore } from '@/lib/store'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import { ErrorState } from '@/components/common/ErrorState'
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
@@ -19,10 +21,12 @@ export default function VisitorLogsPage() {
   const token = useAuthStore((s) => s.token)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [days, setDays] = useState(7)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const t = token || localStorage.getItem('auth_token')
       const res = await fetch(`/api/admin/logs?days=${days}`, {
@@ -31,9 +35,14 @@ export default function VisitorLogsPage() {
       const json = await res.json()
       if (json.success) {
         setData(json.data)
+      } else {
+        setError(json.error || 'Failed to fetch logs')
+        toast.error(json.error || 'Failed to fetch visitor logs')
       }
     } catch (err) {
       console.error('Failed to fetch logs', err)
+      setError(err.message || 'Failed to fetch visitor logs')
+      toast.error('Failed to fetch visitor logs')
     } finally {
       setLoading(false)
     }
@@ -49,6 +58,22 @@ export default function VisitorLogsPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <RefreshCcw className="animate-spin text-primary-500" size={32} />
       </div>
+    )
+  }
+
+  if (!loading && (!data || error)) {
+    return (
+      <WithPermission module="logs" action="view">
+        <div className="py-12 max-w-2xl mx-auto">
+          <ErrorState
+            variant="section"
+            title="Unable to Load Visitor Analytics"
+            message={error || 'An error occurred while fetching analytics logs. Please try again.'}
+            onRetry={fetchData}
+            retryText="Try Again"
+          />
+        </div>
+      </WithPermission>
     )
   }
 
@@ -113,8 +138,8 @@ export default function VisitorLogsPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white">Page Views by Day</h3>
             </div>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] w-full min-h-0">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <AreaChart data={dailyVisits}>
                   <defs>
                     <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
@@ -147,8 +172,8 @@ export default function VisitorLogsPage() {
           {/* Device Distribution */}
           <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-neutral-200 dark:border-dark-700 shadow-sm">
             <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white mb-6">Devices</h3>
-            <div className="h-[240px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[240px] w-full min-h-0">
+              <ResponsiveContainer width="100%" height="100%" minHeight={240}>
                 <PieChart>
                   <Pie
                     data={deviceStats}
@@ -222,8 +247,8 @@ export default function VisitorLogsPage() {
           {/* Browser Stats */}
           <div className="bg-white dark:bg-dark-800 rounded-2xl p-6 border border-neutral-200 dark:border-dark-700 shadow-sm">
             <h3 className="font-serif font-bold text-lg text-neutral-900 dark:text-white mb-6">Browsers</h3>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] w-full min-h-0">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <BarChart data={browserStats} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f0f0f0" />
                   <XAxis type="number" hide />

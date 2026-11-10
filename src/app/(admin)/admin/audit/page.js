@@ -48,31 +48,45 @@ function getActionColor(action) {
 }
 
 import { WithPermission } from '@/components/admin/WithPermission'
+import { ErrorState } from '@/components/common/ErrorState'
+import toast from 'react-hot-toast'
 
 export default function AuditTrailPage() {
   const token = useAuthStore((s) => s.token)
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filter, setFilter] = useState('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
 
   const fetchLogs = async (p = 1) => {
     setLoading(true)
+    setError(null)
     const t = token || localStorage.getItem('auth_token')
     const params = new URLSearchParams({ page: p, limit: 30 })
     if (filter) params.set('action', filter)
     try {
       const res = await fetch(`/api/admin/audit?${params}`, { headers: { Authorization: `Bearer ${t}` } })
       const data = await res.json()
-      if (data.success) { setLogs(data.data.logs); setTotal(data.data.total) }
-    } catch {}
+      if (data.success) {
+        setLogs(data.data.logs)
+        setTotal(data.data.total)
+      } else {
+        setError(data.error || 'Failed to load audit logs')
+        toast.error('Failed to load audit logs')
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load audit logs')
+      toast.error('Failed to load audit logs')
+    }
     setLoading(false)
   }
 
   useEffect(() => {
     let active = true
     const loadLogs = async () => {
+      setError(null)
       const t = token || localStorage.getItem('auth_token')
       const params = new URLSearchParams({ page: 1, limit: 30 })
       if (filter) params.set('action', filter)
@@ -82,8 +96,16 @@ export default function AuditTrailPage() {
         if (active && data.success) {
           setLogs(data.data.logs)
           setTotal(data.data.total)
+        } else if (active && !data.success) {
+          setError(data.error || 'Failed to load audit logs')
+          toast.error('Failed to load audit logs')
         }
-      } catch {}
+      } catch (err) {
+        if (active) {
+          setError(err.message || 'Failed to load audit logs')
+          toast.error('Failed to load audit logs')
+        }
+      }
       if (active) setLoading(false)
     }
     loadLogs()
@@ -136,6 +158,16 @@ export default function AuditTrailPage() {
           {loading ? (
             <div className="p-6 space-y-3">
               {[...Array(8)].map((_, i) => <div key={i} className="h-12 bg-neutral-100 dark:bg-dark-700 rounded-xl animate-pulse" />)}
+            </div>
+          ) : error ? (
+            <div className="p-8">
+              <ErrorState
+                variant="section"
+                title="Failed to Load Audit Logs"
+                message={error}
+                onRetry={() => fetchLogs(page)}
+                retryText="Try Again"
+              />
             </div>
           ) : logs.length === 0 ? (
             <div className="py-16 text-center"><p className="text-neutral-400">No audit logs found.</p></div>

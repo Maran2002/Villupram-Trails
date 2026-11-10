@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/store'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiClient from '@/lib/api'
 import { SearchableSelect } from '@/components/common/SearchableSelect'
+import toast from 'react-hot-toast'
 
 const reportTypeOptions = [
   { value: 'review', label: 'Review / Feedback' },
@@ -56,9 +57,13 @@ function ReportForm() {
       const { data } = await apiClient.post('/reports', form)
       if (data.success) {
         setSubmitted(true)
+        toast.success('Report submitted successfully')
+      } else {
+        toast.error(data.error || 'Failed to submit report')
       }
     } catch (error) {
       console.error('Report submission failed:', error)
+      toast.error(error?.response?.data?.message || error.message || 'Failed to submit report. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

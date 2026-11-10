@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/store'
 import { Star, Trash2, User, EyeOff, Eye } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { ErrorState } from '@/components/common/ErrorState'
 
 export function PlaceReviews({ placeId }) {
   const user = useAuthStore((s) => s.user)
@@ -13,6 +14,7 @@ export function PlaceReviews({ placeId }) {
 
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
@@ -23,13 +25,40 @@ export function PlaceReviews({ placeId }) {
     Authorization: `Bearer ${token || localStorage.getItem('auth_token') || ''}`,
   }), [token])
 
-  useEffect(() => {
+  const loadReviews = useCallback(() => {
     if (!placeId) return
+    setLoading(true)
+    setFetchError(null)
     fetch(`/api/places/${placeId}/reviews`, { headers: authHeader() })
       .then(r => r.json())
-      .then(d => setReviews(d.data || []))
-      .catch(() => {})
+      .then(d => {
+        if (d.success) setReviews(d.data || [])
+        else setFetchError(d.error || 'Failed to load reviews')
+      })
+      .catch((err) => setFetchError(err.message || 'Failed to load reviews'))
       .finally(() => setLoading(false))
+  }, [placeId, authHeader])
+
+  useEffect(() => {
+    if (!placeId) return
+    let active = true
+
+    fetch(`/api/places/${placeId}/reviews`, { headers: authHeader() })
+      .then(r => r.json())
+      .then(d => {
+        if (!active) return
+        if (d.success) setReviews(d.data || [])
+        else setFetchError(d.error || 'Failed to load reviews')
+      })
+      .catch(err => {
+        if (!active) return
+        setFetchError(err.message || 'Failed to load reviews')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => { active = false }
   }, [placeId, authHeader])
 
   const handleSubmit = async (e) => {
@@ -118,6 +147,14 @@ export function PlaceReviews({ placeId }) {
         <div className="space-y-3">
           {[1, 2].map(i => <div key={i} className="h-20 bg-neutral-100 dark:bg-dark-700 rounded-xl animate-pulse" />)}
         </div>
+      ) : fetchError ? (
+        <ErrorState
+          variant="inline"
+          title="Could Not Load Reviews"
+          message={fetchError}
+          onRetry={loadReviews}
+          retryText="Try Again"
+        />
       ) : reviews.length === 0 ? (
         <p className="text-center text-neutral-500 text-sm py-6">No reviews yet. Be the first!</p>
       ) : (

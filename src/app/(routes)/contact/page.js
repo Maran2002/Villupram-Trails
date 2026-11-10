@@ -11,6 +11,7 @@ import { Button } from '@/components/common/Button'
 import { useSettingsStore } from '@/lib/store'
 import apiClient from '@/lib/api'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 export default function ContactPage() {
   const { settings } = useSettingsStore()
@@ -29,8 +30,10 @@ export default function ContactPage() {
     try {
       await apiClient.post('/support', { ...formData, topic: 'From Contact Page' })
       setSubmitted(true)
+      toast.success('Your message has been sent!')
     } catch (error) {
       console.error('Submission failed:', error)
+      toast.error(error?.response?.data?.message || error.message || 'Failed to send message. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

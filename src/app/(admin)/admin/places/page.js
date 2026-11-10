@@ -142,7 +142,8 @@ function RequestsTab() {
     try {
       const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
       const d = await res.json()
-      if (d.success) setItems(d.data.filter(i => i.type === 'Place'))
+      if (!res.ok || !d.success) throw new Error(d.error || 'Failed to load requests')
+      setItems(d.data.filter(i => i.type === 'Place'))
     } catch { toast.error('Failed to load requests') }
     setLoading(false)
   }, [token])
@@ -154,7 +155,8 @@ function RequestsTab() {
       try {
         const res = await fetch('/api/admin/approvals', { headers: { Authorization: `Bearer ${t}` } })
         const d = await res.json()
-        if (active && d.success) setItems(d.data.filter(i => i.type === 'Place'))
+        if (!res.ok || !d.success) throw new Error(d.error || 'Failed to load requests')
+        if (active) setItems(d.data.filter(i => i.type === 'Place'))
       } catch {
         if (active) toast.error('Failed to load requests')
       } finally {

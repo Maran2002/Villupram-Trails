@@ -4,10 +4,11 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, HelpCircle, CheckCircle, Edit, Star, User, 
-  ChevronDown, Book, PlayCircle, ArrowRight, Loader2, Check
+  ChevronDown, Book, PlayCircle, ArrowRight, Loader2, Check, AlertCircle
 } from 'lucide-react'
 import { Button } from '@/components/common/Button'
 import apiClient from '@/lib/api'
+import toast from 'react-hot-toast'
 
 const faqsData = {
   'Getting Started': [
@@ -94,6 +95,7 @@ export default function FAQPage() {
     
     if (!formData.name || !formData.email || !topic || !formData.message) {
       setSubmitStatus('error')
+      toast.error('Please fill out all fields before submitting')
       return
     }
 
@@ -109,6 +111,7 @@ export default function FAQPage() {
       })
       
       setSubmitStatus('success')
+      toast.success('Your message has been sent!')
       setFormData({ name: '', email: '', message: '' })
       setTopic('')
       
@@ -117,6 +120,7 @@ export default function FAQPage() {
     } catch (error) {
       console.error("Support submission failed:", error)
       setSubmitStatus('error')
+      toast.error(error?.response?.data?.message || error.message || 'Failed to submit support request')
     } finally {
       setIsSubmitting(false)
     }
@@ -374,9 +378,10 @@ export default function FAQPage() {
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }} 
                   animate={{ opacity: 1, y: 0 }} 
-                  className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl"
+                  className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl flex items-center gap-3"
                 >
-                  Please fill out all fields correctly and try again.
+                  <AlertCircle size={20} className="shrink-0" />
+                  <span>Please fill out all fields correctly and try again.</span>
                 </motion.div>
               )}
               

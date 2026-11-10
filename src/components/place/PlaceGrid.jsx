@@ -1,12 +1,16 @@
 'use client'
 
+import { useEffect } from 'react'
 import { PlaceCard } from './PlaceCard'
 import { usePlaces } from '@/lib/hooks/usePlaces'
 import { useFilterStore } from '@/lib/store/filterStore'
+import { ErrorState } from '@/components/common/ErrorState'
+import { MapPinOff } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export function PlaceGrid() {
   const { category, search, featured, trending } = useFilterStore()
-  const { data, loading, error } = usePlaces(
+  const { data, loading, error, refetch } = usePlaces(
     1,
     12,
     category === 'all' ? null : category,
@@ -14,6 +18,12 @@ export function PlaceGrid() {
     featured || null,
     trending || null
   )
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load places. Please try again.')
+    }
+  }, [error])
 
   if (loading) {
     return (
@@ -33,7 +43,21 @@ export function PlaceGrid() {
   }
 
   if (error) {
-    return <div className="text-center py-20 text-red-500">Failed to load places. Please try again.</div>
+    return (
+      <div className="py-8">
+        <ErrorState
+          variant="section"
+          icon={MapPinOff}
+          title="Unable to Load Destinations"
+          message="We encountered an issue fetching the directory of places. Please check your connection and try again."
+          onRetry={() => {
+            if (refetch) refetch()
+            else window.location.reload()
+          }}
+          retryText="Try Again"
+        />
+      </div>
+    )
   }
 
   const places = data?.items || []

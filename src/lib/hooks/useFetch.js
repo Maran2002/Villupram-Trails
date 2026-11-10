@@ -1,35 +1,69 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import apiClient from '@/lib/api'
 
 export function useFetch(url, options = {}) {
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(options.enabled !== false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (options.enabled === false) return
 
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const { data: responseData } = await apiClient.get(url)
-        setData(responseData.data || null)
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error'))
-      } finally {
-        setLoading(false)
+    let active = true
+
+    apiClient.get(url)
+      .then(({ data: responseData }) => {
+        if (active) {
+          setData(responseData.data || null)
+          setError(null)
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err : new Error('Unknown error'))
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    if (options.refetchInterval) {
+      const interval = setInterval(() => {
+        apiClient.get(url)
+          .then(({ data: responseData }) => {
+            if (active) setData(responseData.data || null)
+          })
+          .catch((err) => {
+            if (active) setError(err instanceof Error ? err : new Error('Unknown error'))
+          })
+      }, options.refetchInterval)
+
+      return () => {
+        active = false
+        clearInterval(interval)
       }
     }
 
-    fetchData()
-
-    if (options.refetchInterval) {
-      const interval = setInterval(fetchData, options.refetchInterval)
-      return () => clearInterval(interval)
+    return () => {
+      active = false
     }
   }, [url, options.enabled, options.refetchInterval])
 
-  return { data, loading, error }
+  const refetch = useCallback(async () => {
+    if (options.enabled === false) return
+    setLoading(true)
+    setError(null)
+    try {
+      const { data: responseData } = await apiClient.get(url)
+      setData(responseData.data || null)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }, [url, options.enabled])
+
+  return { data, loading, error, refetch }
 }

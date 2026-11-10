@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
   MapPin, Star, Clock, Ticket, Share2, Bookmark, Calendar,
-  Lightbulb, Accessibility, ExternalLink, ChevronRight, Check
+  Lightbulb, Accessibility, ExternalLink, ChevronRight, Check,
+  MapPinOff, Compass, Home
 } from 'lucide-react'
 import { usePlace } from '@/lib/hooks/usePlaces'
 import { PlaceReviews } from '@/components/place/PlaceReviews'
 import { PlaceCarousel } from '@/components/place/PlaceCarousel'
+import { ErrorState } from '@/components/common/ErrorState'
 import { getStaticMapUrl, getExternalMapUrl } from '@/lib/maps'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
@@ -121,13 +123,19 @@ function InfoCards({ place }) {
 /* ─── Main Page ─────────────────────────────────────────── */
 export default function PlaceDetail({ params }) {
   const { placeId } = use(params)
-  const { data: place, loading, error } = usePlace(placeId)
+  const { data: place, loading, error, refetch } = usePlace(placeId)
   const user = useAuthStore((state) => state.user)
   const userId = user?._id?.toString()
   const [activeTab, setActiveTab] = useState('Overview')
   const [savedPlace, setSavedPlace] = useState(null)
   const [saving, setSaving] = useState(false)
   const isSaved = savedPlace?.userId === userId && savedPlace?.saved === true
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Unable to load destination details')
+    }
+  }, [error])
 
   useEffect(() => {
     if (!userId) return
@@ -190,11 +198,30 @@ export default function PlaceDetail({ params }) {
     </div>
   )
 
-  if (error || !place) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-dark-900 gap-4">
-      <p className="text-2xl">😕</p>
-      <p className="text-neutral-600 dark:text-neutral-400">Failed to load this place.</p>
-      <Link href="/explore" className="text-primary-500 hover:underline text-sm">← Back to Explore</Link>
+  if (error || (!loading && !place)) return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-dark-900 pt-28 pb-16 flex items-center justify-center">
+      <ErrorState
+        variant="fullscreen"
+        icon={MapPinOff}
+        badge="Destination Error"
+        title="Destination Not Found"
+        message={error?.message || "We couldn't retrieve the details for this destination. It may have been unlisted, removed, or there might be a network issue."}
+        onRetry={() => {
+          if (refetch) refetch()
+          else window.location.reload()
+        }}
+        retryText="Try Again"
+        primaryAction={{
+          label: 'Explore Other Places',
+          href: '/explore',
+          icon: Compass,
+        }}
+        secondaryAction={{
+          label: 'Back to Home',
+          href: '/',
+          icon: Home,
+        }}
+      />
     </div>
   )
 

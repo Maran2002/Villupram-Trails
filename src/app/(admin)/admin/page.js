@@ -6,6 +6,8 @@ import { Users, MapPin, CheckCircle, MessageSquare, TrendingUp, ArrowUpRight, Cl
 import { useAuthStore } from '@/lib/store'
 import { PendingApprovals } from '@/components/admin/PendingApprovals'
 import { Perm } from '@/components/admin/WithPermission'
+import { ErrorState } from '@/components/common/ErrorState'
+import toast from 'react-hot-toast'
 import Link from 'next/link'
 
 const ACTION_LABELS = {
@@ -50,19 +52,62 @@ export default function AdminOverviewPage() {
   const token = useAuthStore((s) => s.token)
   const user  = useAuthStore((s) => s.user)
   const [stats, setStats] = useState(null)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const loadStats = () => {
+    setError(null)
     const t = token || localStorage.getItem('auth_token')
     fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
-      .then(d => { if (d.success) setStats(d.data) })
-      .catch(() => {})
+      .then(d => {
+        if (d.success) setStats(d.data)
+        else {
+          setError(d.error || 'Failed to load stats')
+          toast.error('Failed to load admin stats')
+        }
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load stats')
+        toast.error('Failed to load admin stats')
+      })
+  }
+
+  useEffect(() => {
+    let active = true
+    const t = token || localStorage.getItem('auth_token')
+    fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (!active) return
+        if (d.success) setStats(d.data)
+        else {
+          setError(d.error || 'Failed to load stats')
+          toast.error('Failed to load admin stats')
+        }
+      })
+      .catch((err) => {
+        if (!active) return
+        setError(err.message || 'Failed to load stats')
+        toast.error('Failed to load admin stats')
+      })
+
+    return () => { active = false }
   }, [token])
 
   const s = stats
 
   return (
     <div className="space-y-8 max-w-7xl">
+      {error && !stats && (
+        <ErrorState
+          variant="section"
+          title="Failed to Load Admin Statistics"
+          message={error}
+          onRetry={loadStats}
+          retryText="Try Again"
+        />
+      )}
+
       {/* Welcome */}
       <div>
         <h2 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white mb-1">

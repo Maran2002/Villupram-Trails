@@ -5,9 +5,10 @@ import { PlaceCard } from '../place/PlaceCard'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowRight, Sparkles } from 'lucide-react'
+import { ErrorState } from '@/components/common/ErrorState'
 
 export function FeaturedPlaces() {
-  const { data, loading, error } = usePlaces(1, 3, null, null, true)
+  const { data, loading, error, refetch } = usePlaces(1, 3, null, null, true)
   const places = data?.items || []
 
   return (
@@ -52,9 +53,18 @@ export function FeaturedPlaces() {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center text-red-500 dark:text-red-400 py-16 bg-red-50 dark:bg-red-900/10 rounded-2xl">
-            Failed to load featured places. Please try again.
-          </div>
+          <ErrorState
+            variant="section"
+            title="Couldn't Load Featured Places"
+            message="We're having trouble retrieving our featured destinations right now. Check your connection or try again."
+            onRetry={refetch}
+            retryText="Try Again"
+            secondaryAction={{
+              label: 'Browse Explore Page',
+              href: '/explore',
+              icon: ArrowRight,
+            }}
+          />
         ) : places.length === 0 ? (
           <div className="text-center text-neutral-500 dark:text-neutral-400 py-16">
             No places found. Check back soon!

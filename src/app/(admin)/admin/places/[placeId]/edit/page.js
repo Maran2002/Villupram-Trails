@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
 import { compressToBase64 } from '@/lib/imageUtils'
+import { ErrorState } from '@/components/common/ErrorState'
 import Link from 'next/link'
 
 const CATEGORIES = ['Heritage', 'Nature', 'Temple', 'Food', 'Beach', 'Adventure', 'Other']
@@ -187,6 +188,7 @@ export default function AdminPlaceEditPage({ params: paramsPromise }) {
   const [compressing, setCompressing] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [imageData, setImageData] = useState([]) // [{ dataUrl, sizeKB, name }]
+  const [loadError, setLoadError] = useState(null)
 
   const [form, setForm] = useState({
     name: '', category: '', subCategory: '', description: '',
@@ -195,12 +197,13 @@ export default function AdminPlaceEditPage({ params: paramsPromise }) {
     entryFee: '', amenities: [], status: 'Pending'
   })
 
-  useEffect(() => {
-    const fetchPlace = async () => {
-      const t = token || localStorage.getItem('auth_token')
-      try {
-        const res = await fetch(`/api/places/${placeId}`, { headers: { Authorization: `Bearer ${t}` } })
-        const d = await res.json()
+  const fetchPlace = () => {
+    setLoading(true)
+    setLoadError(null)
+    const t = token || localStorage.getItem('auth_token')
+    fetch(`/api/places/${placeId}`, { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.json())
+      .then(d => {
         if (d.success) {
           const p = d.data
           setForm({
@@ -219,11 +222,58 @@ export default function AdminPlaceEditPage({ params: paramsPromise }) {
           if (p.images) {
             setImageData(p.images.map(url => ({ dataUrl: url, sizeKB: 0, name: 'existing' })))
           }
-        } else { toast.error('Place not found') }
-      } catch { toast.error('Failed to load place') }
-      setLoading(false)
-    }
-    fetchPlace()
+        } else {
+          setLoadError(d.error || 'Place not found')
+          toast.error('Place not found')
+        }
+      })
+      .catch(err => {
+        setLoadError(err.message || 'Failed to load place')
+        toast.error('Failed to load place')
+      })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    let active = true
+    const t = token || localStorage.getItem('auth_token')
+    fetch(`/api/places/${placeId}`, { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (!active) return
+        if (d.success) {
+          const p = d.data
+          setForm({
+            name: p.name || '',
+            category: p.category || '',
+            subCategory: p.subCategory || '',
+            description: p.description || '',
+            latitude: p.location?.lat?.toString() || '',
+            longitude: p.location?.lng?.toString() || '',
+            address: p.location?.address || '',
+            visitingHours: p.visitingHoursMeta || { startTime: '', endTime: '', days: [] },
+            entryFee: p.entryFee || '',
+            amenities: p.amenities || [],
+            status: p.status || 'Pending'
+          })
+          if (p.images) {
+            setImageData(p.images.map(url => ({ dataUrl: url, sizeKB: 0, name: 'existing' })))
+          }
+        } else {
+          setLoadError(d.error || 'Place not found')
+          toast.error('Place not found')
+        }
+      })
+      .catch(err => {
+        if (!active) return
+        setLoadError(err.message || 'Failed to load place')
+        toast.error('Failed to load place')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => { active = false }
   }, [placeId, token])
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }))
@@ -280,6 +330,26 @@ export default function AdminPlaceEditPage({ params: paramsPromise }) {
   }
 
   if (loading) return <div className="flex items-center justify-center h-[60vh]"><RefreshCw className="animate-spin text-primary-500" size={32} /></div>
+
+  if (loadError || !form.name) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <ErrorState
+          variant="section"
+          badge="Admin Error"
+          title="Place Not Found"
+          message={loadError || "The destination you are trying to edit does not exist or failed to load."}
+          onRetry={fetchPlace}
+          retryText="Try Again"
+          secondaryAction={{
+            label: "Back to Places",
+            href: "/admin/places",
+            icon: ArrowLeft,
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

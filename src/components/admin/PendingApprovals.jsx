@@ -7,6 +7,7 @@ import { Check, X, Eye, MapPin, MessageSquare, RefreshCw, ExternalLink, Info, Ch
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { Perm } from '@/components/admin/WithPermission'
+import { ErrorState } from '@/components/common/ErrorState'
 
 const STATUS_BADGE = {
   Pending:  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -59,6 +60,7 @@ export function PendingApprovals({ compact = false }) {
   const token = useAuthStore((s) => s.token)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [acting, setActing] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
   const [reloadVersion, setReloadVersion] = useState(0)
@@ -74,9 +76,16 @@ export function PendingApprovals({ compact = false }) {
           return
         }
         const d = await res.json()
-        if (active && d.success) setItems(d.data || [])
-      } catch {
-        if (active) toast.error('Failed to load approvals')
+        if (!res.ok || !d.success) throw new Error(d.error || 'Failed to load approvals')
+        if (active) {
+          setItems(d.data || [])
+          setError(null)
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message || 'Failed to load approvals')
+          toast.error(err.message || 'Failed to load approvals')
+        }
       } finally {
         if (active) setLoading(false)
       }
@@ -127,6 +136,16 @@ export function PendingApprovals({ compact = false }) {
       {loading ? (
         <div className="p-6 space-y-3">
           {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-neutral-100 dark:bg-dark-700 rounded-xl animate-pulse" />)}
+        </div>
+      ) : error ? (
+        <div className="p-6">
+          <ErrorState
+            variant="section"
+            title="Failed to Load Approvals"
+            message={error}
+            onRetry={() => { setLoading(true); setReloadVersion(v => v + 1) }}
+            retryText="Try Again"
+          />
         </div>
       ) : items.length === 0 ? (
         <div className="py-14 text-center">

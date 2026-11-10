@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { useAuthStore } from '@/lib/store'
 import { MapPin, MessageSquare, Clock, CheckCircle, XCircle, Eye, Trash2, ChevronRight } from 'lucide-react'
 import { PlaceCard } from '@/components/place/PlaceCard'
+import { ErrorState } from '@/components/common/ErrorState'
+import toast from 'react-hot-toast'
 
 const STATUS_CONFIG = {
   Approved: { label: 'Approved', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
@@ -27,6 +29,7 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const userId = user?._id?.toString()
   const [data, setData] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [activeTab, setActiveTab] = useState('places')
   const [deletingId, setDeletingId] = useState(null)
   const [savedPlacesState, setSavedPlacesState] = useState(null)
@@ -34,7 +37,8 @@ export default function DashboardPage() {
     ? savedPlacesState.places
     : null
 
-  useEffect(() => {
+  const fetchContributions = () => {
+    setLoadError(null)
     fetch('/api/dashboard/my-contributions')
       .then(r => r.json())
       .then(d => {
@@ -46,9 +50,43 @@ export default function DashboardPage() {
             places: Array.isArray(result.places) ? result.places : [],
             reviews: Array.isArray(result.reviews) ? result.reviews : [],
           })
+        } else {
+          setLoadError(d.error || 'Failed to load contributions')
+          toast.error(d.error || 'Failed to load contributions')
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setLoadError('Failed to load dashboard data')
+        toast.error('Failed to load dashboard data')
+      })
+  }
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/dashboard/my-contributions')
+      .then(r => r.json())
+      .then(d => {
+        if (!active) return
+        if (d.success) {
+          const result = d.data && typeof d.data === 'object' ? d.data : {}
+          setData({
+            ...result,
+            stats: result.stats && typeof result.stats === 'object' ? result.stats : {},
+            places: Array.isArray(result.places) ? result.places : [],
+            reviews: Array.isArray(result.reviews) ? result.reviews : [],
+          })
+        } else {
+          setLoadError(d.error || 'Failed to load contributions')
+          toast.error(d.error || 'Failed to load contributions')
+        }
+      })
+      .catch(() => {
+        if (!active) return
+        setLoadError('Failed to load dashboard data')
+        toast.error('Failed to load dashboard data')
+      })
+
+    return () => { active = false }
   }, [userId])
 
   useEffect(() => {
@@ -69,7 +107,8 @@ export default function DashboardPage() {
       const result = await response.json()
       if (!response.ok || !result.success) throw new Error(result.error || 'Could not delete review')
       setData(prev => ({ ...prev, reviews: prev.reviews.filter(r => r._id !== reviewId) }))
-    } catch (error) { window.alert(error.message || 'Could not delete review') }
+      toast.success('Review deleted')
+    } catch (error) { toast.error(error.message || 'Could not delete review') }
     setDeletingId(null)
   }
 
@@ -96,6 +135,16 @@ export default function DashboardPage() {
       </section>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {loadError && !data && (
+          <ErrorState
+            variant="section"
+            title="Unable to Load Dashboard Data"
+            message={loadError}
+            onRetry={fetchContributions}
+            retryText="Try Again"
+          />
+        )}
 
         {/* Stats */}
         <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-4"
