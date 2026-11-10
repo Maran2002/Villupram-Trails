@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/mongodb'
+import clientPromise, { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
 import { hasPermission } from '@/lib/permissions'
-import clientPromise from '@/lib/mongodb'
 import { recalculatePlaceReviewStats } from '@/lib/reviewStats'
 
 export async function GET(request) {
