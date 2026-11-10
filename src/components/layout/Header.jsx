@@ -74,17 +74,18 @@ export function Header() {
         <div className="flex justify-between items-center h-20">
 
           {/* Logo */}
-          <Link href="/" className="group flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-300 overflow-hidden">
-              {settings.siteLogo ? (
-                <img src={settings.siteLogo} alt="" className="w-full h-full object-cover" />
-              ) : (
+          <Link href="/" className="group flex items-center" aria-label={settings.siteName || 'Home'}>
+            {settings.siteLogo ? (
+              <img
+                src={settings.siteLogo}
+                alt={settings.siteName || 'Site Logo'}
+                className="h-10 w-auto max-w-[200px] sm:max-w-[260px] object-contain group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-primary-500 flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-300 shadow-sm shadow-primary-500/20">
                 <MapPin size={22} strokeWidth={2.5} />
-              )}
-            </div>
-            <span className="font-serif text-2xl font-bold text-primary-600 dark:text-primary-400 transition-colors">
-              {settings.siteName || 'Villupuram'}
-            </span>
+              </div>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

@@ -40,13 +40,21 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand */}
           <div className="flex flex-col gap-6">
-            <Link href="/" className="flex items-center gap-2 w-fit">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white overflow-hidden">
-                {settings.siteLogo ? <img src={settings.siteLogo} alt="" className="w-full h-full object-cover" /> : <MapPin size={18} strokeWidth={2.5} />}
-              </div>
-              <span className="font-serif text-xl font-bold text-neutral-900 dark:text-white">
+            <Link href="/" className="flex items-center gap-2.5 w-fit" aria-label={settings.siteName || 'Home'}>
+              {settings.siteLogo ? (
+                <img
+                  src={settings.siteLogo}
+                  alt={settings.siteName || 'Site Logo'}
+                  className="h-9 w-auto max-w-[200px] object-contain"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center text-white">
+                  <MapPin size={18} strokeWidth={2.5} />
+                </div>
+              )}
+              {/* <span className="font-serif text-xl font-bold text-neutral-900 dark:text-white">
                 {settings.siteName || 'Villupuram'}
-              </span>
+              </span> */}
             </Link>
             <p className="text-neutral-600 dark:text-neutral-400 font-light leading-relaxed">
               {settings.seoDescription || 'Unearthing hidden gems, celebrating rich heritage, and curating unparalleled experiences in the heart of Tamil Nadu.'}
