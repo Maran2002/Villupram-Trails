@@ -19,7 +19,7 @@ export default function GuidelinesPage() {
           </div>
           <h1 className="font-serif text-4xl md:text-5xl text-neutral-900 dark:text-white mb-6">Platform Guidelines</h1>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            Our guidelines are designed to keep the Villupuram Discovery Hub authentic, respectful, and highly informative. By participating in our community, you agree to uphold these standards.
+            Our guidelines are designed to keep the Oor Thadam authentic, respectful, and highly informative. By participating in our community, you agree to uphold these standards.
           </p>
         </motion.div>
       </section>

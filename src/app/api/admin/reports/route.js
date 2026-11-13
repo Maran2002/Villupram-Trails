@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
@@ -49,7 +50,7 @@ export async function PATCH(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'reports', 'edit')) return forbidden()
 
-    const body = await request.json()
+    const body = await readJson(request)
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 })
     }
@@ -95,6 +96,8 @@ export async function PATCH(request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Update report error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }

@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useRef, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -393,7 +394,7 @@ export default function AdminPlaceEditPage({ params: paramsPromise }) {
           <div className="flex flex-wrap gap-2 mb-4">
             {imageData.map((img, i) => (
               <div key={i} className="relative group w-24 h-24 rounded-xl overflow-hidden border border-neutral-200 dark:border-dark-600">
-                <img src={img.dataUrl} alt={`Place photo ${i + 1}`} className="w-full h-full object-cover" />
+                <PlaceImage width={80} height={80} src={img.dataUrl} alt={`Place photo ${i + 1}`} className="w-full h-full object-cover" />
                 <button type="button" onClick={() => setImageData(prev => prev.filter((_, idx) => idx !== i))}
                   className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
               </div>

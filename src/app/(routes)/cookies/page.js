@@ -31,7 +31,7 @@ export default function CookiePage() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h2>1. What are Cookies?</h2>
-          <p>Cookies are small text files stored by a website in your browser. Villupuram Trails uses an HttpOnly session cookie after you sign in. The site also uses browser storage for theme preferences. Visitor analytics are sent to the site API and stored in the database; they are not analytics cookies.</p>
+          <p>Cookies are small text files stored by a website in your browser. Oor Thadam uses an HttpOnly session cookie after you sign in. The site also uses browser storage for theme preferences. Visitor analytics are sent to the site API and stored in the database; they are not analytics cookies.</p>
 
           <h2>2. How We Use Cookies</h2>
           <p>The session cookie is used to:</p>

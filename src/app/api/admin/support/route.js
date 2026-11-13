@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -62,7 +63,7 @@ export async function PATCH(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'support', 'edit')) return forbidden()
 
-    const { id, status } = await request.json()
+    const { id, status } = await readJson(request)
     if (!ObjectId.isValid(id)) return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 })
     if (!['open', 'in-progress', 'closed'].includes(status)) return NextResponse.json({ success: false, error: 'Invalid ticket status' }, { status: 400 })
 
@@ -84,6 +85,8 @@ export async function PATCH(request) {
 
     return NextResponse.json({ success: true, data: result })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Update support ticket error:', error)
     return NextResponse.json({ success: false, error: 'Failed to update ticket' }, { status: 500 })
   }

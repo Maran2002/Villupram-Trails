@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { motion } from 'framer-motion'
 import { Users, ShieldCheck, Camera, Compass, Heart, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/common/Button'
@@ -36,7 +37,7 @@ export default function AboutPage() {
           className="absolute inset-0 z-0"
           initial={{ scale: 1.15 }} animate={{ scale: 1 }} transition={{ duration: 1.5, ease: "easeOut" }}
         >
-          <img alt="Background landscape" className="w-full h-full object-cover object-center filter brightness-[0.65]" src={heroImg.src} />
+          <PlaceImage fill priority sizes="100vw" alt="" className="w-full h-full object-cover object-center filter brightness-[0.65]" src={heroImg} />
           <div className="absolute inset-0 bg-gradient-to-b from-dark-900/60 via-dark-900/20 to-neutral-50 dark:to-dark-900"></div>
         </motion.div>
         
@@ -67,7 +68,7 @@ export default function AboutPage() {
           <motion.div variants={fadeUp} className="relative">
             <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 rounded-3xl blur-2xl -z-10"></div>
             <h2 className="font-serif text-4xl md:text-5xl text-neutral-900 dark:text-white mb-6 leading-tight">
-              Elevating the Narrative of <span className="text-primary-600 dark:text-primary-400 italic">{settings.siteName || 'Villupuram Hub'}</span>
+              Elevating the Narrative of <span className="text-primary-600 dark:text-primary-400 italic">{settings.siteName || 'Oor Thadam'}</span>
             </h2>
             <div className="w-20 h-1.5 bg-gradient-to-r from-primary-500 to-secondary-500 mb-8 rounded-full"></div>
             <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 leading-relaxed mb-6 font-light">
@@ -78,7 +79,7 @@ export default function AboutPage() {
             </p>
           </motion.div>
           <motion.div variants={fadeUp} className="relative h-[500px] rounded-3xl overflow-hidden shadow-2xl group">
-            <img src={cardImg.src} alt="Local culture" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            <PlaceImage fill sizes="(max-width: 1023px) 100vw, 50vw" src={cardImg} alt="Local culture" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             <div className="absolute inset-0 bg-gradient-to-t from-dark-900/80 via-transparent to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8"><p className="text-white text-xl font-medium font-serif italic">&quot;Preserving the past, inspiring the future.&quot;</p></div>
           </motion.div>

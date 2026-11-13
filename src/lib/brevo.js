@@ -9,11 +9,11 @@ function escapeHtml(value) {
 export async function sendOtpEmail({ email, code, purpose }) {
   const apiKey = process.env.BREVO_API_KEY
   const senderEmail = process.env.BREVO_SENDER_EMAIL
-  const senderName = process.env.BREVO_SENDER_NAME || 'Villupuram Trails'
+  const senderName = process.env.BREVO_SENDER_NAME || 'Oor Thadam'
   if (!apiKey || !senderEmail) throw new Error('Brevo email configuration is incomplete')
 
   const isReset = purpose === 'password_reset'
-  const subject = isReset ? 'Your password reset code' : 'Verify your Villupuram Trails account'
+  const subject = isReset ? 'Your password reset code' : 'Verify your Oor Thadam email address'
   const action = isReset ? 'reset your password' : 'verify your email address'
   const htmlContent = `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#222"><h2>${subject}</h2><p>Use this code to ${action}:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">${escapeHtml(code)}</p><p>This code expires in 10 minutes. If you did not request it, you can ignore this email.</p></div>`
 

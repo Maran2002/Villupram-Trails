@@ -12,17 +12,17 @@ import toast from 'react-hot-toast'
 
 const faqsData = {
   'Getting Started': [
-    { id: 1, q: 'What is Villupuram Discovery Hub?', a: 'Villupuram Discovery Hub is a community-driven platform designed to help travelers explore both well-known tourist attractions and undiscovered hidden gems in and around the Villupuram district of Tamil Nadu.' },
+    { id: 1, q: 'What is Oor Thadam?', a: 'Oor Thadam is a community-driven platform designed to help travelers explore both well-known tourist attractions and undiscovered hidden gems in and around the Villupuram district of Tamil Nadu.' },
     { id: 2, q: 'Is this platform free to use?', a: 'Yes! Exploring the directory, reading reviews, and using the maps is completely free for all users.' },
-    { id: 3, q: 'Do I need an account to browse places?', a: 'No, you do not need an account to browse destinations, view photos, or read reviews. You need an account to submit a place or review. Review submission also requires an administrator to mark your account as verified.' },
-    { id: 13, q: 'Is there a mobile app available?', a: 'Currently, Villupuram Discovery Hub is a fully responsive web application, meaning it works beautifully on any mobile browser. A dedicated native app is in our future roadmap.' },
+    { id: 3, q: 'Do I need an account to browse places?', a: 'No, you do not need an account to browse destinations, view photos, or read reviews. You need an account to submit a place or review. Review submission also requires a verified email address.' },
+    { id: 13, q: 'Is there a mobile app available?', a: 'Currently, Oor Thadam is a fully responsive web application, meaning it works beautifully on any mobile browser. A dedicated native app is in our future roadmap.' },
     { id: 14, q: 'How can I share a place with my friends?', a: 'Every destination page features a "Share" button that allows you to quickly copy the link or share it directly to social media platforms like WhatsApp and Facebook.' }
   ],
   'Verification': [
-    { id: 4, q: 'How do I verify my account?', a: 'Verification is managed by an administrator. There is no self-service identity document upload or verification request workflow in the site right now. Contact the community team if you need help.' },
+    { id: 4, q: 'How do I verify my account?', a: 'Enter the code sent to your email during registration or verify your address in Account Settings.' },
     { id: 5, q: 'Why do I need to be verified?', a: 'Verified accounts can submit reviews. Place submissions require an account and follow the current moderation setting, but do not require verification.' },
     { id: 15, q: 'Is my uploaded ID kept secure?', a: 'The site does not currently accept identity document uploads for verification.' },
-    { id: 16, q: 'Can I be un-verified?', a: 'Yes, if an account violates our Community Guidelines repeatedly, verification status may be revoked and the account suspended.' }
+    { id: 16, q: 'What happens when I change my email?', a: 'Account Settings asks for your current password and a code sent to your new email before updating your address.' }
   ],
   'Contributions': [
     { id: 6, q: 'How do I add a new place to the directory?', a: "Sign in and use the 'Add Place' form in your dashboard. Provide the destination name, category, description and location. Submissions follow the site's current moderation setting." },

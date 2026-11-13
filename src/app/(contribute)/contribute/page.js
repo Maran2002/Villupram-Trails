@@ -1,12 +1,13 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { Suspense, useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import {
   MapPin, ChevronDown, CloudUpload, X, Clock, DollarSign,
-  Check, Landmark, FileText, Image as ImageIcon, Save, Send, AlertCircle, RefreshCw, ArrowLeft
+  Check, Landmark, FileText, Image as ImageIcon, Send, AlertCircle, RefreshCw, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
@@ -270,7 +271,7 @@ function ContributePageForm() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
   const fileRef = useRef(null)
-  const { user, token } = useAuthStore()
+  const { user } = useAuthStore()
   const [submitting, setSaving] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [imageData, setImageData] = useState([])  // [{ dataUrl, sizeKB, name }]
@@ -365,7 +366,7 @@ function ContributePageForm() {
     return parts.join(' | ')
   }
 
-  const handleSubmit = async (e, isDraft = false) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name || !form.category || !form.description) {
       toast.error('Fill in the required fields (name, category, description).')
@@ -373,7 +374,6 @@ function ContributePageForm() {
     }
     setSaving(true)
     try {
-      const t = token || localStorage.getItem('auth_token')
       const payload = {
         name: form.name, category: form.category, subCategory: form.subCategory,
         description: form.description, fullDescription: form.description,
@@ -386,7 +386,6 @@ function ContributePageForm() {
         visitingHoursMeta: form.visitingHours,
         entryFee: form.entryFee, amenities: form.amenities,
         images: imageData.map(img => img.dataUrl),
-        status: isDraft ? 'Draft' : 'Pending',
       }
 
       const url = editId ? `/api/places/${editId}` : '/api/places'
@@ -396,7 +395,6 @@ function ContributePageForm() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          ...(t ? { Authorization: `Bearer ${t}` } : {}),
         },
         body: JSON.stringify(payload),
       })
@@ -404,11 +402,11 @@ function ContributePageForm() {
       if (!data.success) throw new Error(data.error || 'Submission failed')
       
       if (editId) {
-        toast.success('Update submitted for review!')
+        toast.success(user?.role === 'admin' ? 'Place updated!' : 'Update submitted for review!')
         router.push(user?.role === 'admin' ? '/admin' : '/dashboard')
       } else {
-        toast.success(isDraft ? 'Draft saved!' : 'Submitted for review! Thank you.')
-        if (!isDraft) router.push('/explore')
+        toast.success(data.data?.status === 'Approved' ? 'Place published!' : 'Submitted for admin review!')
+        router.push(user?.role === 'admin' ? '/admin/places' : '/dashboard')
       }
     } catch (err) {
       toast.error(err.message || 'Something went wrong')
@@ -481,7 +479,7 @@ function ContributePageForm() {
               <FieldLabel required>Map Preview</FieldLabel>
               <div className="h-48 rounded-xl bg-neutral-100 dark:bg-dark-700 border border-neutral-200 dark:border-dark-600 relative overflow-hidden flex items-center justify-center">
                 {form.latitude && form.longitude ? (
-                  <img
+                  <PlaceImage fill sizes="(max-width: 768px) 100vw, 400px"
                     alt="Map preview for the entered coordinates"
                     src={getStaticMapUrl(form.latitude, form.longitude)}
                     className="w-full h-full object-cover"
@@ -565,7 +563,7 @@ function ContributePageForm() {
                   {imageData.map((img, i) => (
                     <div key={i} className="relative group">
                       <div className="w-20 h-20 rounded-xl overflow-hidden border border-neutral-200 dark:border-dark-600">
-                        <img src={img.dataUrl} alt="" className="w-full h-full object-cover" />
+                        <PlaceImage width={80} height={80} src={img.dataUrl} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[9px] text-center py-0.5 rounded-b-xl">
                         {img.sizeKB} KB
@@ -610,16 +608,10 @@ function ContributePageForm() {
         {/* Action buttons */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}
           className="flex gap-3 justify-end pt-2">
-          {!editId && (
-            <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={submitting}
-              className="flex items-center gap-2 px-6 py-2.5 border-2 border-neutral-300 dark:border-dark-600 text-neutral-700 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 text-sm font-semibold rounded-xl transition-colors">
-              <Save size={15} /> Save as Draft
-            </button>
-          )}
           <button type="submit" disabled={submitting}
             className="flex items-center gap-2 px-6 py-2.5 bg-secondary-500 hover:bg-secondary-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors shadow-md">
             <Send size={15} />
-            {submitting ? 'Submitting…' : (editId ? 'Submit Update' : 'Submit for Review')}
+            {submitting ? 'Submitting…' : (editId ? (user?.role === 'admin' ? 'Save Changes' : 'Submit Update') : user?.role === 'admin' ? 'Publish Place' : 'Submit for Review')}
           </button>
         </motion.div>
       </form>

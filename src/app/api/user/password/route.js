@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -6,12 +8,14 @@ import jwt from 'jsonwebtoken'
 import { getAuthUser, getJwtSecret, unauthorized, writeAudit } from '@/lib/auth'
 
 export async function PUT(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
     const userSession = await getAuthUser(request)
     if (!userSession) return unauthorized()
     const jwtSecret = getJwtSecret()
 
-    const { oldPassword, newPassword } = await request.json()
+    const { oldPassword, newPassword } = await readJson(request)
     if (!oldPassword || !newPassword) {
       return NextResponse.json({ success: false, error: 'Both old and new passwords are required' }, { status: 400 })
     }
@@ -66,6 +70,8 @@ export async function PUT(request) {
     })
     return response
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Password update error:', error)
     return NextResponse.json({ success: false, error: 'Failed to update password' }, { status: 500 })
   }

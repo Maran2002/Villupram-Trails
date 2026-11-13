@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Bell, Loader2, RefreshCw, X, Megaphone, Info, AlertTriangle, Star } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
@@ -149,7 +149,6 @@ export function NotificationCenter({ className = '' }) {
     if (!open || !user) return
     let active = true
 
-    setLoading(true)
     fetch('/api/notifications', { cache: 'no-store' })
       .then(r => r.json().then(p => ({ r, p })))
       .then(({ r, p }) => {
@@ -172,13 +171,18 @@ export function NotificationCenter({ className = '' }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user?._id, user?.role])
 
+  const closePanel = useCallback(() => {
+    setSeenIds(new Set(items.map(item => item.id)))
+    setOpen(false)
+  }, [items])
+
   /* Keyboard close */
   useEffect(() => {
     if (!open) return
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') closePanel() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open])
+  }, [open, closePanel])
 
   /* Body scroll lock */
   useEffect(() => {
@@ -188,13 +192,6 @@ export function NotificationCenter({ className = '' }) {
     return () => { document.body.style.overflow = prev }
   }, [open])
 
-  /* Mark all seen when panel closes */
-  useEffect(() => {
-    if (!open && items.length > 0) {
-      setSeenIds(new Set(items.map(n => n.id)))
-    }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const unreadCount = items.filter(n => !seenIds.has(n.id)).length
   const groups = groupByDay(items)
 
@@ -203,7 +200,7 @@ export function NotificationCenter({ className = '' }) {
       {/* Bell trigger button */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => { setLoading(Boolean(user)); setError(''); setOpen(true) }}
         className={`relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-neutral-600 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-dark-700 ${className}`}
         aria-label="Open notifications"
         aria-haspopup="dialog"
@@ -221,7 +218,7 @@ export function NotificationCenter({ className = '' }) {
       {open && typeof document !== 'undefined' && createPortal((
         <div
           className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-5"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) closePanel() }}
         >
           <section
             role="dialog"
@@ -251,7 +248,7 @@ export function NotificationCenter({ className = '' }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closePanel}
                   aria-label="Close notifications"
                   className="rounded-xl p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-dark-700"
                 >
@@ -285,7 +282,7 @@ export function NotificationCenter({ className = '' }) {
                   <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-500 dark:bg-primary-900/20">
                     <Bell size={22} />
                   </span>
-                  <p className="font-semibold text-neutral-800 dark:text-white">You're all caught up</p>
+                  <p className="font-semibold text-neutral-800 dark:text-white">You&apos;re all caught up</p>
                   <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">New community updates will appear here.</p>
                 </div>
               ) : (

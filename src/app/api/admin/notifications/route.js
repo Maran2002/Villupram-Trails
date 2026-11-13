@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
 import { hasPermission } from '@/lib/permissions'
@@ -54,7 +55,7 @@ export async function POST(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'notifications', 'add')) return forbidden()
 
-    const body = await request.json()
+    const body = await readJson(request)
     const db = await getDb()
     const roles = await getAvailableNotificationRoles(db)
     const { value, error } = normalizeNotificationInput(body, roles)
@@ -78,6 +79,8 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: serializeNotification(notification) }, { status: 201 })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Create notification error:', error)
     return NextResponse.json({ success: false, error: 'Could not publish notification' }, { status: 500 })
   }

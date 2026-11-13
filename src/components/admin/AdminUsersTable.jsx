@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { hasVerifiedEmail } from '@/lib/emailVerification'
 import { useAuthStore } from '@/lib/store'
 import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Plus, X, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -146,10 +147,10 @@ export function AdminUsersTable() {
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
-                    u.isVerified
+                    hasVerifiedEmail(u)
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                       : 'bg-neutral-100 text-neutral-500 dark:bg-dark-700 dark:text-neutral-400'
-                  }`}>{u.isVerified ? 'Verified' : 'Unverified'}</span>
+                  }`}>{hasVerifiedEmail(u) ? 'Verified' : 'Unverified'}</span>
                 </td>
                 <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                   {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}
@@ -212,8 +213,7 @@ function UserModal({ user, onClose, onSuccess }) {
     email: user?.email || '',
     password: '',
     role: user?.role || 'user',
-    permissions: user?.permissions || {},
-    isVerified: user?.isVerified === true
+    permissions: user?.permissions || {}
   })
 
   const [loading, setLoading] = useState(false)
@@ -237,12 +237,14 @@ function UserModal({ user, onClose, onSuccess }) {
     const t = token || localStorage.getItem('auth_token')
     
     const payload = { ...form }
-    if (isEdit && !payload.password) delete payload.password;
+    if (isEdit) {
+      delete payload.email
+      if (!payload.password) delete payload.password
+    }
     if (payload.role === 'user') delete payload.permissions;
     if (!isSuperAdmin(currentUser)) {
       delete payload.role
       delete payload.permissions
-      delete payload.isVerified
     }
 
     try {
@@ -280,7 +282,7 @@ function UserModal({ user, onClose, onSuccess }) {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-500 uppercase">Email</label>
-              <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" />
+              <input required readOnly={isEdit} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-500 uppercase">Password {isEdit && '(Leave empty to keep)'}</label>
@@ -294,18 +296,6 @@ function UserModal({ user, onClose, onSuccess }) {
               </select>
             </div>
           </div>
-
-          {isEdit && isSuperAdmin(currentUser) && user?.role !== 'admin' && (
-            <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-              <input
-                type="checkbox"
-                checked={form.isVerified}
-                onChange={(e) => setForm(f => ({ ...f, isVerified: e.target.checked }))}
-                className="rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
-              />
-              Verified account (allows review submission)
-            </label>
-          )}
 
           {form.role === 'admin' && isSuperAdmin(currentUser) && (
             <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-dark-700">

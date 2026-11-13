@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import apiClient from '@/lib/api'
 
 export function useFetch(url, options = {}) {
+  const [resolvedUrl, setResolvedUrl] = useState(null)
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(options.enabled !== false)
   const [error, setError] = useState(null)
@@ -26,7 +27,7 @@ export function useFetch(url, options = {}) {
         }
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (active) { setResolvedUrl(url); setLoading(false) }
       })
 
     if (options.refetchInterval) {
@@ -65,5 +66,6 @@ export function useFetch(url, options = {}) {
     }
   }, [url, options.enabled])
 
-  return { data, loading, error, refetch }
+  const pending = options.enabled !== false && resolvedUrl !== url
+  return { data: pending ? null : data, loading: pending || loading, error: pending ? null : error, refetch }
 }

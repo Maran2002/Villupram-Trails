@@ -21,7 +21,7 @@ export function validOtp(code) {
   return typeof code === 'string' && /^\d{6}$/.test(code)
 }
 
-export async function issueOtp({ db, user, purpose, force = false }) {
+export async function issueOtp({ db, user, purpose, force = false, email = user.email }) {
   const collection = db.collection('email_verifications')
   const now = new Date()
   const existing = await collection.findOne({ userId: user._id, purpose })
@@ -41,30 +41,41 @@ export async function issueOtp({ db, user, purpose, force = false }) {
   const windowStartedAt = sendCount ? existing.windowStartedAt : now
   const codeExpiresAt = new Date(now.getTime() + OTP_TTL_MS)
   const expiresAt = new Date(windowStartedAt.getTime() + SEND_WINDOW_MS)
-  await collection.updateOne(
-    { userId: user._id, purpose },
-    { $set: {
-      userId: user._id, email: user.email, purpose,
-      codeHash: otpDigest(user._id.toString(), purpose, code),
-      attempts: 0, sentAt: now, windowStartedAt, sendCount: nextCount, codeExpiresAt, expiresAt,
-    } },
-    { upsert: true }
-  )
+  const previous = existing
+    ? { _id: existing._id, sentAt: existing.sentAt, sendCount: existing.sendCount }
+    : { userId: user._id, purpose, sentAt: { $exists: false } }
+  let reserved
+  try {
+    reserved = await collection.updateOne(
+      previous,
+      { $set: {
+        userId: user._id, email, purpose,
+        codeHash: otpDigest(user._id.toString(), purpose, code),
+        attempts: 0, sentAt: now, windowStartedAt, sendCount: nextCount, codeExpiresAt, expiresAt,
+      } },
+      { upsert: !existing }
+    )
+  } catch (error) {
+    if (error.code !== 11000) throw error
+    return { ok: false, retryAfterSeconds: 60 }
+  }
+  if (!reserved.modifiedCount && !reserved.upsertedCount) return { ok: false, retryAfterSeconds: 60 }
 
   try {
-    await sendOtpEmail({ email: user.email, code, purpose })
+    await sendOtpEmail({ email, code, purpose })
     return { ok: true }
   } catch (error) {
     // Invalidate the code if delivery fails; keep a non-sensitive diagnostic server-side.
-    await collection.deleteOne({ userId: user._id, purpose, sentAt: now })
+    await collection.updateOne({ userId: user._id, purpose, codeHash: otpDigest(user._id.toString(), purpose, code) },
+      { $set: { codeHash: '', codeExpiresAt: now } })
     console.error('OTP email delivery failed', { purpose, error: error?.message || 'unknown error' })
     return { ok: false, deliveryFailed: true }
   }
 }
 
-export async function verifyOtp({ db, user, purpose, code }) {
+export async function verifyOtp({ db, user, purpose, code, email = user.email, session }) {
   const collection = db.collection('email_verifications')
-  const record = await collection.findOne({ userId: user._id, purpose })
+  const record = await collection.findOne({ userId: user._id, purpose, email }, { session })
   if (!record || !record.codeExpiresAt || record.codeExpiresAt <= new Date()) return { ok: false, reason: 'expired' }
   if (record.attempts >= MAX_ATTEMPTS) return { ok: false, reason: 'locked' }
 
@@ -73,16 +84,18 @@ export async function verifyOtp({ db, user, purpose, code }) {
   const matches = expected.length === actual.length && timingSafeEqual(expected, actual)
   if (!matches) {
     await collection.updateOne(
-      { _id: record._id, attempts: { $lt: MAX_ATTEMPTS }, codeExpiresAt: { $gt: new Date() } },
-      { $inc: { attempts: 1 } }
+      { _id: record._id, email, codeHash: record.codeHash, attempts: { $lt: MAX_ATTEMPTS }, codeExpiresAt: { $gt: new Date() } },
+      { $inc: { attempts: 1 } },
+      { session }
     )
     return { ok: false, reason: 'invalid' }
   }
   // Keep the send-window counters so a completed reset cannot immediately
   // reset its delivery quota. Atomically consume the code to prevent replay.
   const consumed = await collection.updateOne(
-    { _id: record._id, codeHash: record.codeHash, attempts: { $lt: MAX_ATTEMPTS }, codeExpiresAt: { $gt: new Date() } },
-    { $set: { codeHash: '', consumedAt: new Date(), codeExpiresAt: new Date() } }
+    { _id: record._id, email, codeHash: record.codeHash, attempts: { $lt: MAX_ATTEMPTS }, codeExpiresAt: { $gt: new Date() } },
+    { $set: { codeHash: '', consumedAt: new Date(), codeExpiresAt: new Date() } },
+    { session }
   )
   return consumed.modifiedCount === 1 ? { ok: true } : { ok: false, reason: 'expired' }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { hasVerifiedEmail } from '@/lib/emailVerification'
 import { useAuthStore } from '@/lib/store'
 import { Star, Trash2, User, EyeOff, Eye } from 'lucide-react'
 import Link from 'next/link'
@@ -76,7 +77,7 @@ export function PlaceReviews({ placeId }) {
       setReviews(prev => [data.data, ...prev])
       setComment('')
       setRating(5)
-      toast.success('Review submitted!')
+      toast.success(data.data.visible ? 'Review published!' : 'Review submitted for approval!')
     } catch (err) {
       toast.error(err.message || 'Failed to submit review')
     } finally { setSubmitting(false) }
@@ -112,7 +113,7 @@ export function PlaceReviews({ placeId }) {
   return (
     <div>
       {/* Review form — auth required */}
-      {user ? (
+      {hasVerifiedEmail(user) ? (
         <form onSubmit={handleSubmit} className="bg-white dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 p-5 mb-6 shadow-sm">
           <p className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm mb-3">Write a Review</p>
           <div className="flex gap-1 mb-3">
@@ -134,10 +135,10 @@ export function PlaceReviews({ placeId }) {
         </form>
       ) : (
         <div className="bg-neutral-50 dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 p-5 mb-6 text-center">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">Sign in to write a review</p>
-          <Link href="/auth/login"
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">{user ? 'Verify your email to write a review' : 'Sign in to write a review'}</p>
+          <Link href={user ? (isAdmin ? '/admin/profile' : '/dashboard/profile') : '/auth/login'}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold rounded-xl transition-colors">
-            Sign In
+            {user ? 'Account Settings' : 'Sign In'}
           </Link>
         </div>
       )}

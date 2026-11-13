@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -17,7 +18,7 @@ export async function PUT(request, { params }) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'reviews', 'edit')) return forbidden()
 
-    const body = await request.json()
+    const body = await readJson(request)
     const { comment, rating, visible } = body
     if (comment !== undefined && (typeof comment !== 'string' || !comment.trim() || comment.length > 2000)) {
       return NextResponse.json({ success: false, error: 'Comment must be between 1 and 2000 characters' }, { status: 422 })
@@ -63,6 +64,8 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ success: true, data: updatedReview })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to update review' }, { status: 500 })
   }
 }

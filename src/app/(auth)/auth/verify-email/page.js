@@ -40,7 +40,7 @@ function VerifyEmailForm() {
 
   return <main className="min-h-screen bg-neutral-50 dark:bg-dark-900 flex items-center justify-center px-4 py-10">
     <section className="w-full max-w-md rounded-2xl bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-600 p-7 shadow-xl">
-      <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-7"><MapPin size={20}/><span className="font-serif font-bold">Villupuram Trails</span></div>
+      <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-7"><MapPin size={20}/><span className="font-serif font-bold">Oor Thadam</span></div>
       <h1 className="text-2xl font-serif font-bold text-neutral-900 dark:text-white">Verify your email</h1>
       <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2 mb-6">Enter the six digit code we sent you. It expires in 10 minutes.</p>
       <form onSubmit={submit} className="space-y-4">

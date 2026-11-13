@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
@@ -8,8 +10,10 @@ import { isSuperAdmin } from '@/lib/permissions'
 const ADMIN_TOKEN = process.env.ADMIN_ACCESS_TOKEN
 
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
-    const { username, password, accessToken } = await request.json()
+    const { username, password, accessToken } = await readJson(request)
     const jwtSecret = getJwtSecret()
 
     // First gate — static access token must match
@@ -56,7 +60,9 @@ export async function POST(request) {
     })
 
     return response
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Login failed' }, { status: 500 })
   }
 }

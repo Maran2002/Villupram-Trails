@@ -2,8 +2,8 @@ import { create } from 'zustand'
 
 export const useSettingsStore = create((set) => ({
   settings: {
-    siteName: 'Villupuram Hub',
-    siteLogo: '',
+    siteName: 'Oor Thadam',
+    siteLogo: '/images/oor-thadam-logo.png',
     contactEmail: '',
     contactPhone: '',
     address: '',

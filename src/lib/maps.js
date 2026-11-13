@@ -1,11 +1,18 @@
 /** Build links and same-origin map image URLs without exposing the Google key. */
-export function getExternalMapUrl(placeName, location = {}) {
+function mapDestination(placeName, location = {}) {
   const { lat, lng, address } = location
   if (lat != null && lng != null && lat !== '' && lng !== '' && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`
+    return encodeURIComponent(`${lat},${lng}`)
   }
-  const query = encodeURIComponent(`${placeName || ''} ${address || ''}`.trim())
-  return `https://www.google.com/maps/search/?api=1&query=${query}`
+  return encodeURIComponent(`${placeName || ''} ${address || ''}`.trim())
+}
+
+export function getExternalMapUrl(placeName, location) {
+  return `https://www.google.com/maps/search/?api=1&query=${mapDestination(placeName, location)}`
+}
+
+export function getDirectionsUrl(placeName, location) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${mapDestination(placeName, location)}`
 }
 
 export function getStaticMapUrl(lat, lng, zoom = 15) {

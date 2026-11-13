@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useRef } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Search, MapPin, Compass, SlidersHorizontal, X } from 'lucide-react'
 import { PlaceGrid } from '@/components/place/PlaceGrid'
 import { PlaceFilter } from '@/components/place/PlaceFilter'
@@ -25,7 +25,8 @@ const fadeUp = {
 }
 
 export default function ExplorePage() {
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const filtersDialog = useRef(null)
+  const reduceMotion = useReducedMotion()
   const { search, setSearch } = useFilterStore()
 
   return (
@@ -42,7 +43,7 @@ export default function ExplorePage() {
           <motion.div 
             className="flex flex-col items-center text-center max-w-3xl mx-auto"
             variants={staggerContainer}
-            initial="hidden"
+            initial={reduceMotion ? false : "hidden"}
             animate="show"
           >
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-sm font-medium mb-6 border border-primary-100 dark:border-primary-800/50 shadow-sm">
@@ -64,7 +65,8 @@ export default function ExplorePage() {
                 <Search size={22} className="text-neutral-400 group-focus-within:text-primary-500 transition-colors" />
               </div>
               <input
-                type="text"
+                type="search"
+                aria-label="Search destinations"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search places, categories, or keywords..."
@@ -80,16 +82,17 @@ export default function ExplorePage() {
 
       {/* Main Content Layout */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <h2 className="text-2xl font-serif font-bold text-neutral-900 dark:text-white flex items-center gap-2">
             <MapPin className="text-primary-500" />
-            Featured Destinations
+            Destinations
           </h2>
           
           <div className="flex gap-3">
             <button 
               className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white dark:bg-dark-800 border border-neutral-200 dark:border-dark-700 rounded-lg text-sm font-medium shadow-sm hover:bg-neutral-50 dark:hover:bg-dark-700 transition-colors"
-              onClick={() => setMobileFiltersOpen(true)}
+              aria-haspopup="dialog"
+              onClick={() => filtersDialog.current.showModal()}
             >
               <SlidersHorizontal size={16} />
               Filters
@@ -101,7 +104,7 @@ export default function ExplorePage() {
           {/* Desktop Sidebar Filters */}
           <motion.aside
             className="hidden lg:block lg:col-span-1 sticky top-32"
-            initial={{ opacity: 0, x: -20 }}
+            initial={reduceMotion ? false : { opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
@@ -111,7 +114,7 @@ export default function ExplorePage() {
           {/* Grid Container */}
           <motion.div
             className="lg:col-span-3"
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
@@ -120,43 +123,22 @@ export default function ExplorePage() {
         </div>
       </section>
 
-      {/* Mobile Filter Drawer */}
-      <AnimatePresence>
-        {mobileFiltersOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileFiltersOpen(false)}
-              className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm z-50 lg:hidden"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-xs bg-white dark:bg-dark-900 shadow-2xl z-50 lg:hidden overflow-y-auto"
-            >
-              <div className="p-4 flex items-center justify-between border-b border-neutral-200 dark:border-dark-800 sticky top-0 bg-white dark:bg-dark-900 z-10">
-                <h3 className="font-serif font-bold text-lg flex items-center gap-2">
-                  <SlidersHorizontal size={18} className="text-primary-500" />
-                  Filters
-                </h3>
-                <button 
-                  onClick={() => setMobileFiltersOpen(false)}
-                  className="p-2 bg-neutral-100 dark:bg-dark-800 rounded-full hover:bg-neutral-200 dark:hover:bg-dark-700 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="p-4">
-                <PlaceFilter />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <dialog ref={filtersDialog} aria-labelledby="explore-filters-title"
+        className="m-0 ml-auto h-dvh max-h-none w-full max-w-xs overflow-y-auto bg-white text-neutral-900 backdrop:bg-neutral-900/60 dark:bg-dark-900 dark:text-white"
+        onClick={event => { if (event.target === event.currentTarget) event.currentTarget.close() }}
+      >
+        <div className="min-h-full">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-white p-4 dark:border-dark-800 dark:bg-dark-900">
+            <h3 id="explore-filters-title" className="font-serif text-lg font-bold">Filters</h3>
+            <form method="dialog">
+              <button type="submit" aria-label="Close filters" className="rounded-full bg-neutral-100 p-2 dark:bg-dark-800">
+                <X size={20} />
+              </button>
+            </form>
+          </div>
+          <div className="p-4"><PlaceFilter /></div>
+        </div>
+      </dialog>
     </div>
   )
 }

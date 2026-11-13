@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -258,7 +259,7 @@ export function PendingApprovals({ compact = false }) {
                                   <p className="text-[10px] font-bold text-neutral-400 uppercase">Current Images ({item.images?.length || 0})</p>
                                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                                     {item.images?.map((img, i) => (
-                                      <img key={i} src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-neutral-200 dark:border-dark-700 shrink-0 opacity-60 grayscale-[50%]" />
+                                      <PlaceImage width={80} height={80} key={i} src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-neutral-200 dark:border-dark-700 shrink-0 opacity-60 grayscale-[50%]" />
                                     ))}
                                     {(!item.images || item.images.length === 0) && <p className="text-xs text-neutral-400 italic">No images</p>}
                                   </div>
@@ -267,7 +268,7 @@ export function PendingApprovals({ compact = false }) {
                                   <p className="text-[10px] font-bold text-primary-500 uppercase">New Proposed Images ({item.pendingUpdate.images?.length || 0})</p>
                                   <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                                     {item.pendingUpdate.images?.map((img, i) => (
-                                      <img key={i} src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-primary-200 dark:border-primary-800 shrink-0 shadow-sm" />
+                                      <PlaceImage width={80} height={80} key={i} src={img} alt="" className="w-16 h-16 object-cover rounded-lg border border-primary-200 dark:border-primary-800 shrink-0 shadow-sm" />
                                     ))}
                                     {(!item.pendingUpdate.images || item.pendingUpdate.images.length === 0) && <p className="text-xs text-neutral-400 italic">No images</p>}
                                   </div>
@@ -317,7 +318,7 @@ export function PendingApprovals({ compact = false }) {
                                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Attached Images ({item.images.length})</p>
                                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                                   {item.images.map((img, i) => (
-                                    <img key={i} src={img} alt="" className="w-20 h-20 object-cover rounded-lg border border-neutral-200 dark:border-dark-700 shrink-0" />
+                                    <PlaceImage width={80} height={80} key={i} src={img} alt="" className="w-20 h-20 object-cover rounded-lg border border-neutral-200 dark:border-dark-700 shrink-0" />
                                   ))}
                                 </div>
                               </div>

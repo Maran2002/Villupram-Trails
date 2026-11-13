@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -60,7 +61,7 @@ export async function PATCH(request, { params }) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'reviews', 'edit')) return forbidden('You do not have permission to moderate reviews')
 
-    const { visible } = await request.json()
+    const { visible } = await readJson(request)
     if (typeof visible !== 'boolean' || !ObjectId.isValid(reviewId)) return NextResponse.json({ success: false, error: 'Invalid review update' }, { status: 400 })
     const db = await getDb()
 
@@ -91,7 +92,9 @@ export async function PATCH(request, { params }) {
     })
 
     return NextResponse.json({ success: true, data: updatedReview })
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to update review' }, { status: 500 })
   }
 }

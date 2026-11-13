@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import clientPromise, { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -63,7 +64,7 @@ export async function PUT(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'approvals', 'edit')) return forbidden()
 
-    const { itemId, type, action } = await request.json()
+    const { itemId, type, action } = await readJson(request)
     if (!ObjectId.isValid(itemId) || !['Place', 'Review'].includes(type) || !['approve', 'reject'].includes(action)) {
       return NextResponse.json({ success: false, error: 'Invalid approval action' }, { status: 400 })
     }
@@ -131,6 +132,8 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Process approval error:', error)
     return NextResponse.json({ success: false, error: 'Failed to process action' }, { status: 500 })
   }

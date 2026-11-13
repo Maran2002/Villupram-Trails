@@ -1,6 +1,9 @@
+import { limitApiRequest } from '@/lib/rateLimit'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   const key = process.env.GOOGLE_MAPS_API_KEY
   if (!key) return NextResponse.json({ success: false, error: 'Map previews are not configured' }, { status: 503 })
 

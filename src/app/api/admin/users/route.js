@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, hasPermission, writeAudit } from '@/lib/auth'
@@ -56,7 +57,7 @@ export async function POST(request) {
     if (!user) return unauthorized()
     if (!hasPermission(user, 'users', 'add')) return forbidden()
 
-    const body = await request.json()
+    const body = await readJson(request)
     const { email, password, username, role, permissions } = body
 
     if ((role === 'admin' || permissions !== undefined) && !isSuperAdmin(user)) {
@@ -68,7 +69,7 @@ export async function POST(request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    const { doc, errors } = buildUserDoc({ email, username, hashedPassword, role, permissions })
+    const { doc, errors } = buildUserDoc({ email, username, hashedPassword, role, permissions, isVerified: false })
 
     if (errors.length) {
       return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 422 })
@@ -93,7 +94,9 @@ export async function POST(request) {
 
     const { password: _, ...safe } = doc
     return NextResponse.json({ success: true, data: { ...safe, _id: result.insertedId } }, { status: 201 })
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to create user' }, { status: 500 })
   }
 }

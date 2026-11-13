@@ -1,3 +1,6 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { hasVerifiedEmail } from '@/lib/emailVerification'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -17,7 +20,11 @@ export async function GET(request, { params }) {
     const db      = await getDb()
     const user = await getAuthUser(request)
 
-    const query = { placeId: new ObjectId(placeId) }
+    const placeOid = new ObjectId(placeId)
+    if (!await db.collection('places').findOne({ _id: placeOid, status: 'Approved' }, { projection: { _id: 1 } })) {
+      return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
+    }
+    const query = { placeId: placeOid }
     if (!hasPermission(user, 'reviews', 'view')) query.visible = true
 
     const { searchParams } = new URL(request.url)
@@ -40,6 +47,8 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
     const { placeId } = await params
     if (!ObjectId.isValid(placeId)) {
@@ -51,11 +60,11 @@ export async function POST(request, { params }) {
     if (user.role === 'admin' && !hasPermission(user, 'reviews', 'add')) {
       return NextResponse.json({ success: false, error: 'You do not have permission to submit reviews' }, { status: 403 })
     }
-    if (user.role !== 'admin' && user.isVerified !== true) {
-      return NextResponse.json({ success: false, error: 'Your account must be verified before writing a review' }, { status: 403 })
+    if (!hasVerifiedEmail(user)) {
+      return NextResponse.json({ success: false, error: 'Verify your email before writing a review' }, { status: 403 })
     }
 
-    const body = await request.json()
+    const body = await readJson(request)
     const placeOid = new ObjectId(placeId)
     const { doc, errors } = buildReviewDoc(body, user, placeOid)
 
@@ -73,7 +82,7 @@ export async function POST(request, { params }) {
 
     // Ensure the place exists and is approved
     const place = await db.collection('places').findOne({ _id: placeOid })
-    if (!place || (place.status !== 'Approved' && !hasPermission(user, 'places', 'view'))) {
+    if (!place || place.status !== 'Approved') {
       return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
     }
 
@@ -105,7 +114,9 @@ export async function POST(request, { params }) {
       { success: true, data: { ...doc, _id: result.insertedId } },
       { status: 201 }
     )
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to submit review' }, { status: 500 })
   }
 }

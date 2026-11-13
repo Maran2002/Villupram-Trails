@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, unauthorized, forbidden, writeAudit } from '@/lib/auth'
@@ -14,7 +15,7 @@ export async function PUT(request, { params }) {
     const { notificationId } = await params
     if (!ObjectId.isValid(notificationId)) return NextResponse.json({ success: false, error: 'Invalid notification ID' }, { status: 400 })
 
-    const body = await request.json()
+    const body = await readJson(request)
     const db = await getDb()
     const roles = await getAvailableNotificationRoles(db)
     const { value, error } = normalizeNotificationInput(body, roles)
@@ -36,6 +37,8 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ success: true, data: serializeNotification(updated) })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Update notification error:', error)
     return NextResponse.json({ success: false, error: 'Could not update notification' }, { status: 500 })
   }

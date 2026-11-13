@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
@@ -47,7 +48,7 @@ export async function PUT(request, { params }) {
     const place = await db.collection('places').findOne({ _id: new ObjectId(placeId) })
     if (!place) return NextResponse.json({ success: false, error: 'Place not found' }, { status: 404 })
 
-    const body = await request.json()
+    const body = await readJson(request, 6 * 1024 * 1024)
 
     const isOwner = place.submittedBy?.userId?.toString() === user._id.toString()
     const isAdmin = user.role === 'admin'
@@ -96,6 +97,8 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ success: true, data: result })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Update error:', error)
     return NextResponse.json({ success: false, error: 'Failed to update place' }, { status: 500 })
   }

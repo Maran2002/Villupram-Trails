@@ -1,9 +1,13 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 
 export async function POST(req) {
+  const limited = await limitApiRequest(req)
+  if (limited) return limited
   try {
-    const { name, email, topic, message } = await req.json()
+    const { name, email, topic, message } = await readJson(req)
 
     // Validate the input
     if (typeof name !== 'string' || !name.trim() || name.length > 100
@@ -37,6 +41,8 @@ export async function POST(req) {
       { status: 201 }
     )
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Support ticket creation error:', error)
     return NextResponse.json(
       { success: false, message: 'Failed to submit support request.' },

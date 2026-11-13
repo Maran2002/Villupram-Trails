@@ -31,10 +31,10 @@ export default function AccessibilityPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h2>Our Commitment</h2>
-          <p>Villupuram Discovery Hub is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone and applying the relevant accessibility standards to guarantee we provide equal access to all of our users.</p>
+          <p>Oor Thadam is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone and applying the relevant accessibility standards to guarantee we provide equal access to all of our users.</p>
 
           <h2>Measures to Support Accessibility</h2>
-          <p>Villupuram Discovery Hub takes the following measures to ensure accessibility of the platform:</p>
+          <p>Oor Thadam takes the following measures to ensure accessibility of the platform:</p>
           <ul>
             <li>Include accessibility as part of our mission statement.</li>
             <li>Include accessibility throughout our internal policies.</li>
@@ -44,10 +44,10 @@ export default function AccessibilityPage() {
           </ul>
 
           <h2>Conformance Status</h2>
-          <p>The Web Content Accessibility Guidelines (WCAG) defines requirements for designers and developers to improve accessibility for people with disabilities. It defines three levels of conformance: Level A, Level AA, and Level AAA. Villupuram Discovery Hub is partially conformant with WCAG 2.1 level AA. Partially conformant means that some parts of the content do not fully conform to the accessibility standard.</p>
+          <p>The Web Content Accessibility Guidelines (WCAG) defines requirements for designers and developers to improve accessibility for people with disabilities. It defines three levels of conformance: Level A, Level AA, and Level AAA. Oor Thadam is partially conformant with WCAG 2.1 level AA. Partially conformant means that some parts of the content do not fully conform to the accessibility standard.</p>
 
           <h2>Technical Specifications</h2>
-          <p>Accessibility of Villupuram Discovery Hub relies on the following technologies to work with the particular combination of web browser and any assistive technologies or plugins installed on your computer:</p>
+          <p>Accessibility of Oor Thadam relies on the following technologies to work with the particular combination of web browser and any assistive technologies or plugins installed on your computer:</p>
           <ul>
             <li>HTML</li>
             <li>WAI-ARIA</li>
@@ -57,7 +57,7 @@ export default function AccessibilityPage() {
           <p>These technologies are relied upon for conformance with the accessibility standards used.</p>
 
           <h2>Feedback</h2>
-          <p>We welcome your feedback on the accessibility of Villupuram Discovery Hub. Please let us know if you encounter accessibility barriers on the platform by reaching out to us through our FAQ Support form.</p>
+          <p>We welcome your feedback on the accessibility of Oor Thadam. Please let us know if you encounter accessibility barriers on the platform by reaching out to us through our FAQ Support form.</p>
           <p>We try to respond to feedback within 2 business days.</p>
         </motion.div>
       </section>

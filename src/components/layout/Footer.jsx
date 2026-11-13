@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Heart, Mail, Check, AlertCircle, Loader2 } from 'lucide-react'
@@ -42,7 +43,7 @@ export function Footer() {
           <div className="flex flex-col gap-6">
             <Link href="/" className="flex items-center gap-2.5 w-fit" aria-label={settings.siteName || 'Home'}>
               {settings.siteLogo ? (
-                <img
+                <PlaceImage width={360} height={120}
                   src={settings.siteLogo}
                   alt={settings.siteName || 'Site Logo'}
                   className="h-9 w-auto max-w-[200px] object-contain"
@@ -53,7 +54,7 @@ export function Footer() {
                 </div>
               )}
               {/* <span className="font-serif text-xl font-bold text-neutral-900 dark:text-white">
-                {settings.siteName || 'Villupuram'}
+                {settings.siteName || 'Oor Thadam'}
               </span> */}
             </Link>
             <p className="text-neutral-600 dark:text-neutral-400 font-light leading-relaxed">
@@ -111,7 +112,7 @@ export function Footer() {
 
         <div className="h-px bg-neutral-200 dark:bg-dark-800 w-full mb-8"></div>
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400 font-light">
-          <p>&copy; {new Date().getFullYear()} {settings.siteName || 'Villupuram Hub'}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {settings.siteName || 'Oor Thadam'}. All rights reserved.</p>
           <p className="flex items-center gap-1.5">Made with <Heart size={14} className="text-red-500 fill-red-500" /> by <a href={authorLink} target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">Elamaran</a></p>
         </div>
       </div>

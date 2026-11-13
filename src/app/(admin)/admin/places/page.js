@@ -39,7 +39,7 @@ function RequestCard({ item, onAction, acting }) {
     <div className="bg-white dark:bg-dark-800 rounded-2xl border border-neutral-200 dark:border-dark-700 shadow-sm overflow-hidden">
       <div className="flex items-center gap-4 p-5 cursor-pointer" onClick={() => setExpanded(e => !e)}>
         <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-100 dark:bg-dark-700 shrink-0">
-          {item.images?.[0] && <img src={item.images[0]} alt="" className="w-full h-full object-cover" />}
+          {item.images?.[0] && <PlaceImage width={80} height={80} src={item.images[0]} alt="" className="w-full h-full object-cover" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -115,7 +115,7 @@ function RequestCard({ item, onAction, acting }) {
                   <p className="font-bold text-neutral-400 uppercase tracking-wider mb-2">Images ({item.images.length})</p>
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     {item.images.map((img, i) => (
-                      <img key={i} src={img} alt="" className="w-20 h-20 object-cover rounded-xl border border-neutral-200 dark:border-dark-700 shrink-0" />
+                      <PlaceImage width={80} height={80} key={i} src={img} alt="" className="w-20 h-20 object-cover rounded-xl border border-neutral-200 dark:border-dark-700 shrink-0" />
                     ))}
                   </div>
                 </div>
@@ -243,7 +243,7 @@ export default function AdminPlacesPage() {
   const load = useCallback(async (p = 1) => {
     setLoading(true)
     const t = token || localStorage.getItem('auth_token')
-    const params = new URLSearchParams({ page: p, limit: LIMIT })
+    const params = new URLSearchParams({ scope: 'admin', page: p, limit: LIMIT })
     if (search) params.set('search', search)
     try {
       const res = await fetch(`/api/places?${params}`, { headers: { Authorization: `Bearer ${t}` } })
@@ -263,7 +263,7 @@ export default function AdminPlacesPage() {
     let active = true
     const loadPlaces = async () => {
       const t = token || localStorage.getItem('auth_token')
-      const params = new URLSearchParams({ page: 1, limit: LIMIT })
+      const params = new URLSearchParams({ scope: 'admin', page: 1, limit: LIMIT })
       if (searchRef.current) params.set('search', searchRef.current)
       try {
         const res = await fetch(`/api/places?${params}`, { headers: { Authorization: `Bearer ${t}` } })

@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { use, useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
@@ -12,7 +13,7 @@ import { usePlace } from '@/lib/hooks/usePlaces'
 import { PlaceReviews } from '@/components/place/PlaceReviews'
 import { PlaceCarousel } from '@/components/place/PlaceCarousel'
 import { ErrorState } from '@/components/common/ErrorState'
-import { getStaticMapUrl, getExternalMapUrl } from '@/lib/maps'
+import { getStaticMapUrl, getExternalMapUrl, getDirectionsUrl } from '@/lib/maps'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/lib/store'
 
@@ -60,11 +61,9 @@ function PlanYourVisit({ place, isSaved, saving, onToggleSave }) {
       {/* Map view */}
       <div className="mt-4 group h-36 bg-neutral-100 dark:bg-dark-700 rounded-xl relative overflow-hidden border border-neutral-200 dark:border-dark-600">
         {hasCoords ? (
-          <img
+          <PlaceImage fill sizes="(max-width: 768px) 100vw, 400px"
             title="Map preview"
             alt={`Map preview for ${place?.name || 'this place'}`}
-            width="600"
-            height="300"
             style={{ filter: 'grayscale(0.2) contrast(1.1)' }}
             className="w-full h-full object-cover"
             src={getStaticMapUrl(place?.location?.lat, place?.location?.lng)}
@@ -172,7 +171,7 @@ export default function PlaceDetail({ params }) {
   const handleShare = () => {
     if (!place) return
     const shareData = {
-      title: `${place.name} | Villupuram Discovery Hub`,
+      title: `${place.name} | Oor Thadam`,
       text: `Check out ${place.name} in Villupuram!`,
       url: window.location.href,
     }
@@ -336,7 +335,7 @@ export default function PlaceDetail({ params }) {
             {activeTab === 'Directions' && (
               <div className="py-16 text-center">
                 <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">Open directions for {place.name} in Google Maps.</p>
-                <a href={getExternalMapUrl(place.name, place.location)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-white font-semibold hover:bg-primary-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500">
+                <a href={getDirectionsUrl(place.name, place.location)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-white font-semibold hover:bg-primary-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500">
                   <ExternalLink size={16} /> Get directions
                 </a>
               </div>

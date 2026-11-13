@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
@@ -6,8 +8,10 @@ import { getJwtSecret } from '@/lib/auth'
 import { isSuperAdmin } from '@/lib/permissions'
 
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
-    const { email, password } = await request.json()
+    const { email, password } = await readJson(request)
     const jwtSecret = getJwtSecret()
     if (typeof email !== 'string' || typeof password !== 'string') {
       return NextResponse.json({ success: false, error: 'Email and password are required' }, { status: 400 })
@@ -51,7 +55,9 @@ export async function POST(request) {
     })
 
     return response
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to login' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, forbidden, hasPermission, writeAudit, SUPERADMIN_ID, isSuperAdmin } from '@/lib/auth'
@@ -16,10 +17,10 @@ export async function PUT(request, { params }) {
     if (!ObjectId.isValid(id)) return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 })
     const targetId = new ObjectId(id).toString()
 
-    const body = await request.json()
+    const body = await readJson(request)
 
-    if ((body.role !== undefined || body.permissions !== undefined || body.isVerified !== undefined) && !isSuperAdmin(user)) {
-      return forbidden('Only the superadmin can change roles, permissions, or verification status')
+    if ((body.role !== undefined || body.permissions !== undefined) && !isSuperAdmin(user)) {
+      return forbidden('Only the superadmin can change roles or permissions')
     }
 
     // Prevent modifying superadmin by anyone else
@@ -30,6 +31,10 @@ export async function PUT(request, { params }) {
     const { patch, errors } = buildUserPatch(body)
     if (errors.length) {
       return NextResponse.json({ success: false, error: errors.join('; ') }, { status: 422 })
+    }
+
+    if (body.isVerified !== undefined) {
+      return NextResponse.json({ success: false, error: 'Email verification requires a code from the account holder' }, { status: 422 })
     }
 
     if (body.password) {
@@ -49,12 +54,18 @@ export async function PUT(request, { params }) {
     }
 
     // MongoDB driver v5: findOneAndUpdate returns the document directly (not wrapped in .value)
+    const target = await db.collection('users').findOne({ _id: new ObjectId(id) }, { projection: { email: 1 } })
+    if (!target) return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
+    if (patch.email !== undefined && patch.email !== target.email) {
+      return NextResponse.json({ success: false, error: 'Account holders must verify a new email in Account Settings' }, { status: 422 })
+    }
+    delete patch.email
     const update = { $set: patch }
-    if (patch.password || patch.role || patch.permissions || patch.isVerified !== undefined) {
+    if (patch.password || patch.role || patch.permissions) {
       update.$inc = { sessionVersion: 1 }
     }
     const updated = await db.collection('users').findOneAndUpdate(
-      { _id: new ObjectId(id) },
+      { _id: new ObjectId(id), email: target.email },
       update,
       { returnDocument: 'after', projection: { password: 0 } }
     )
@@ -68,7 +79,9 @@ export async function PUT(request, { params }) {
     })
 
     return NextResponse.json({ success: true, data: updated })
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to update user' }, { status: 500 })
   }
 }

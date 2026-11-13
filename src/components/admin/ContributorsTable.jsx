@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { hasVerifiedEmail } from '@/lib/emailVerification'
 import { useAuthStore } from '@/lib/store'
 import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, MapPin, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -84,7 +85,7 @@ export function ContributorsTable() {
                     <div>
                       <p className="font-medium text-sm text-neutral-900 dark:text-white flex items-center gap-1.5">
                         {u.username}
-                        {u.isVerified && <Shield size={11} className="text-primary-500" />}
+                        {hasVerifiedEmail(u) && <Shield size={11} className="text-primary-500" />}
                       </p>
                       <p className="text-xs text-neutral-400 truncate max-w-[180px]">{u.email}</p>
                     </div>
@@ -108,10 +109,10 @@ export function ContributorsTable() {
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
-                    u.isVerified
+                    hasVerifiedEmail(u)
                       ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                       : 'bg-neutral-100 text-neutral-500 dark:bg-dark-700 dark:text-neutral-400'
-                  }`}>{u.isVerified ? 'Verified' : 'Unverified'}</span>
+                  }`}>{hasVerifiedEmail(u) ? 'Verified' : 'Unverified'}</span>
                 </td>
               </tr>
             ))}

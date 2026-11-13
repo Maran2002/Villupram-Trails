@@ -1,13 +1,16 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { ProfileEmailFields } from '@/components/common/ProfileEmailFields'
 import { useAuthStore } from '@/lib/store'
 import { 
-  User, Mail, Camera, Save, MapPin, 
+  User, Camera, Save, MapPin,
   FileText, Loader2, Shield, Lock, Activity, Key, Eye, EyeOff, CheckCircle, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import apiClient from '@/lib/api'
 import { compressToBase64 } from '@/lib/imageUtils'
 
 export default function AdminProfilePage() {
@@ -19,6 +22,8 @@ export default function AdminProfilePage() {
 function AdminProfileForm({ initialUser }) {
   const { user, token, setUser } = useAuthStore()
   const [saving, setSaving] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verification, setVerification] = useState({ password: '', code: '', sent: false })
   const [changingPass, setChangingPass] = useState(false)
 
   const [form, setForm] = useState(() => ({
@@ -45,22 +50,44 @@ function AdminProfileForm({ initialUser }) {
     } catch (err) { toast.error('Failed to process image', { id: loadingToast }) }
   }
 
+  const sendEmailCode = async () => {
+    setSendingCode(true)
+    try {
+      await apiClient.put('/user/profile', {
+        email: form.email,
+        currentPassword: verification.password,
+        sendEmailCode: true,
+      }, { timeout: 15000 })
+      setVerification(value => ({ ...value, sent: true, code: '' }))
+      toast.success('Check your email for the verification code')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault()
+    const emailChanged = form.email.trim().toLowerCase() !== user.email
+    if (emailChanged && !verification.sent) return toast.error('Send a verification code to the new email first')
+    const { email, ...profile } = form
+    const payload = verification.sent
+      ? { ...profile, email, currentPassword: verification.password, emailCode: verification.code }
+      : profile
+
     setSaving(true)
-    const t = token || localStorage.getItem('auth_token')
     try {
-      const res = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
-        body: JSON.stringify(form)
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
+      const { data } = await apiClient.put('/user/profile', payload)
       setUser(data.data)
-      toast.success('Admin profile updated!')
-    } catch (err) { toast.error(err.message) }
-    finally { setSaving(false) }
+      setForm(value => ({ ...value, email: data.data.email }))
+      setVerification({ password: '', code: '', sent: false })
+      toast.success('Profile updated!')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handlePasswordSubmit = async (e) => {
@@ -88,7 +115,7 @@ function AdminProfileForm({ initialUser }) {
         <div className="flex items-center gap-4">
           <div className="relative group">
             <div className="w-20 h-20 rounded-2xl bg-primary-500 flex items-center justify-center text-white text-2xl font-bold overflow-hidden shadow-lg">
-              {form.profileImage ? <img src={form.profileImage} alt="Profile" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
+              {form.profileImage ? <PlaceImage width={112} height={112} src={form.profileImage} alt="Profile" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
             </div>
             <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-2 -right-2 p-1.5 bg-white dark:bg-dark-700 text-neutral-600 dark:text-neutral-300 rounded-lg shadow-md border border-neutral-200 dark:border-dark-600 hover:text-primary-500 transition-colors"><Camera size={14} /></button>
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -112,10 +139,12 @@ function AdminProfileForm({ initialUser }) {
                 <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Admin Username</label>
                 <input type="text" value={form.username} onChange={(e) => setForm(f => ({ ...f, username: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Contact Email</label>
-                <input type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm" required />
-              </div>
+              <ProfileEmailFields email={form.email} user={user} verification={verification}
+                    setVerification={setVerification} sending={sendingCode} onSend={sendEmailCode}
+                    onEmailChange={email => {
+                      setForm(value => ({ ...value, email }))
+                      setVerification({ password: '', code: '', sent: false })
+                    }} />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Base Location</label>
@@ -125,7 +154,7 @@ function AdminProfileForm({ initialUser }) {
               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Admin Bio</label>
               <textarea rows={4} value={form.bio} onChange={(e) => setForm(f => ({ ...f, bio: e.target.value }))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm resize-none" />
             </div>
-            <button type="submit" disabled={saving} className="px-8 flex items-center justify-center gap-2 py-3 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary-500/20">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Update Admin Info</button>
+            <button type="submit" disabled={saving || sendingCode} className="px-8 flex items-center justify-center gap-2 py-3 bg-primary-500 hover:bg-primary-600 disabled:opacity-60 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary-500/20">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Update Admin Info</button>
           </form>
         </div>
 

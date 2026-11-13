@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -46,12 +47,12 @@ function AdminSidebarNav({ collapsed, setCollapsed }) {
       {/* Logo */}
       <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 ${collapsed ? 'justify-center' : ''}`}>
         <div className="w-9 h-9 rounded-xl bg-primary-500 flex items-center justify-center shrink-0 shadow-lg overflow-hidden">
-          {settings.siteLogo ? <img src={settings.siteLogo} alt="" className="w-full h-full object-cover" /> : <Shield size={18} className="text-white" strokeWidth={2.5} />}
+          {settings.siteLogo ? <PlaceImage width={360} height={120} src={settings.siteLogo} alt="" className="w-full h-full object-cover" /> : <Shield size={18} className="text-white" strokeWidth={2.5} />}
         </div>
         {!collapsed && (
           <div>
             <p className="font-serif font-bold text-sm leading-tight">Admin Panel</p>
-            <p className="text-[10px] text-neutral-400 leading-tight truncate max-w-[140px]">{settings.siteName || 'Villupuram Hub'}</p>
+            <p className="text-[10px] text-neutral-400 leading-tight truncate max-w-[140px]">{settings.siteName || 'Oor Thadam'}</p>
           </div>
         )}
       </div>
@@ -154,7 +155,7 @@ export default function AdminLayout({ children }) {
             
             <Link href="/admin/profile" className="flex items-center gap-2 group">
               <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold shadow overflow-hidden ring-0 group-hover:ring-2 ring-primary-500/30 transition-all">
-                {user?.profileImage ? <img src={user.profileImage} alt={user.username} className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase() || 'A'}
+                {user?.profileImage ? <PlaceImage width={112} height={112} src={user.profileImage} alt={user.username} className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase() || 'A'}
               </div>
             </Link>
 

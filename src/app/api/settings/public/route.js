@@ -10,8 +10,8 @@ export async function GET() {
       return NextResponse.json({ 
         success: true, 
         data: {
-          siteName: 'Villupuram Hub',
-          siteLogo: '',
+          siteName: 'Oor Thadam',
+          siteLogo: '/images/oor-thadam-logo.png',
           contactEmail: 'contact@villupuramhub.com',
           contactPhone: '+91 98765 43210',
           address: 'Villupuram, Tamil Nadu, India',

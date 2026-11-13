@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, writeAudit } from '@/lib/auth'
@@ -7,8 +9,9 @@ import { hasPermission } from '@/lib/permissions'
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const page     = Math.max(1, parseInt(searchParams.get('page'))  || 1)
-    const limit    = Math.min(50, parseInt(searchParams.get('limit')) || 12)
+    const requestedPage = Number(searchParams.get('page') || 1)
+    const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+    const limit    = Math.max(1, Math.min(50, parseInt(searchParams.get('limit')) || 12))
     const category = searchParams.get('category')
     const search   = searchParams.get('search')
     const day      = searchParams.get('day')   // e.g. 'Mon'
@@ -16,12 +19,9 @@ export async function GET(request) {
     const trending = searchParams.get('trending')
 
     const db      = await getDb()
-    let user = null
-    try { user = await getAuthUser(request) } catch {}
-
     const query = {}
-    // Non-admins only see Approved places
-    const canReviewAll = hasPermission(user, 'places', 'view')
+    const canReviewAll = searchParams.get('scope') === 'admin' &&
+      hasPermission(await getAuthUser(request), 'places', 'view')
     if (!canReviewAll) query.status = 'Approved'
 
     if (category && category !== 'all' && VALID_CATEGORIES.includes(category)) {
@@ -41,8 +41,12 @@ export async function GET(request) {
     // Filter by open day
     if (day) query['visitingHoursMeta.days'] = day
 
+    const offset = (page - 1) * limit
+    if (!Number.isSafeInteger(offset)) {
+      return NextResponse.json({ success: false, error: 'Invalid page number' }, { status: 400 })
+    }
     const [places, total] = await Promise.all([
-      db.collection('places').find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
+      db.collection('places').find(query, canReviewAll ? {} : { projection: { images: { $slice: 1 } } }).sort({ createdAt: -1, _id: -1 }).skip(offset).limit(limit).toArray(),
       db.collection('places').countDocuments(query),
     ])
 
@@ -56,23 +60,17 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
     if (user.role === 'admin' && !hasPermission(user, 'places', 'add')) return NextResponse.json({ success: false, error: 'You do not have permission to add places' }, { status: 403 })
 
     const db     = await getDb()
-    const settings = await db.collection('settings').findOne({ _id: 'site_config' })
-    const body = await request.json()
+    const body = await readJson(request, 6 * 1024 * 1024)
     
-    // Admins always force Approved. 
-    // Users depend on the requirePlaceApproval setting (if setting is false, force Approved).
-    let forceStatus = undefined
-    if (user.role === 'admin') {
-      forceStatus = 'Approved'
-    } else if (settings?.requirePlaceApproval === false) {
-      forceStatus = 'Approved'
-    }
+    const forceStatus = user.role === 'admin' ? 'Approved' : 'Pending'
 
     const { doc, errors } = buildPlaceDoc(body, user, forceStatus)
 
@@ -102,7 +100,9 @@ export async function POST(request) {
       { success: true, data: { ...doc, _id: result.insertedId } },
       { status: 201 }
     )
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to create place' }, { status: 500 })
   }
 }

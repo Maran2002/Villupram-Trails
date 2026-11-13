@@ -22,7 +22,7 @@ function float(v)                   { const n = parseFloat(v); return isNaN(n) ?
 function clamp(v, min, max)         { return Math.min(Math.max(Number(v) || 0, min), max) }
 function filterArr(arr, valid)      { return Array.isArray(arr) ? arr.filter(i => valid.includes(i)) : [] }
 
-function filterImages(value) {
+export function filterImages(value) {
   if (!Array.isArray(value)) return []
   let totalBytes = 0
   const images = []
@@ -220,8 +220,8 @@ export function buildReviewDoc(body, user, placeObjectId) {
 
 export function buildUserDoc({ email, username, hashedPassword, role = 'user', permissions = {}, isVerified = true }) {
   const errors = []
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('invalid email')
-  if (!username || username.length < 3) errors.push('username must be at least 3 characters')
+  if (typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('invalid email')
+  if (typeof username !== 'string' || str(username).length < 3 || username.length > 80) errors.push('username must be 3 to 80 characters')
   if (!hashedPassword) errors.push('password hash required')
 
   if (!['admin', 'user'].includes(role)) errors.push('role must be admin or user')
@@ -252,12 +252,12 @@ export function buildUserPatch(body) {
 
   if ('email' in body) {
     const v = str(body.email).toLowerCase()
-    if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) errors.push('invalid email')
+    if (v.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) errors.push('invalid email')
     else patch.email = v
   }
   if ('username' in body) {
     const v = str(body.username)
-    if (!v || v.length < 3) errors.push('username must be at least 3 characters')
+    if (v.length < 3 || v.length > 80) errors.push('username must be 3 to 80 characters')
     else patch.username = v
   }
   if ('role' in body) {

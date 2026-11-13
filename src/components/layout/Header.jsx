@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useEffect, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -74,9 +75,9 @@ export function Header() {
         <div className="flex justify-between items-center h-20">
 
           {/* Logo */}
-          <Link href="/" className="group flex items-center" aria-label={settings.siteName || 'Home'}>
+          <Link href="/" className="group flex items-center gap-2" aria-label={settings.siteName || 'Home'}>
             {settings.siteLogo ? (
-              <img
+              <PlaceImage width={360} height={120}
                 src={settings.siteLogo}
                 alt={settings.siteName || 'Site Logo'}
                 className="h-10 w-auto max-w-[200px] sm:max-w-[260px] object-contain group-hover:scale-105 transition-transform duration-300"
@@ -86,6 +87,7 @@ export function Header() {
                 <MapPin size={22} strokeWidth={2.5} />
               </div>
             )}
+            {!settings.siteLogo && <span className="font-serif font-bold">{settings.siteName || 'Oor Thadam'}</span>}
           </Link>
 
           {/* Desktop Navigation */}
@@ -134,7 +136,7 @@ export function Header() {
                   className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/40 border border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-300 text-sm font-semibold transition-all"
                 >
                   <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center overflow-hidden">
-                    {user.profileImage ? <img src={user.profileImage} alt="" className="w-full h-full object-cover" /> : <User size={13} className="text-white" />}
+                    {user.profileImage ? <PlaceImage width={112} height={112} src={user.profileImage} alt="" className="w-full h-full object-cover" /> : <User size={13} className="text-white" />}
                   </div>
                   {truncateName(user.username)}
                   <ChevronDown size={14} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />

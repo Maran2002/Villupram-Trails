@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useAuthStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -60,7 +61,7 @@ export default function DashboardHeader() {
           </div>
           <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-dark-700 flex items-center justify-center border border-neutral-200 dark:border-dark-600 overflow-hidden ring-0 group-hover:ring-2 ring-primary-500/30 transition-all">
             {user?.profileImage ? (
-              <img src={user.profileImage} alt={user.username} className="w-full h-full object-cover" />
+              <PlaceImage width={112} height={112} src={user.profileImage} alt={user.username} className="w-full h-full object-cover" />
             ) : (
               <User size={18} className="text-neutral-500" />
             )}

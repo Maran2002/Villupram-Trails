@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import bcrypt from 'bcryptjs'
@@ -5,8 +7,10 @@ import { buildUserDoc } from '@/lib/schemas'
 import { issueOtp, normalizeEmail, publicOtpError } from '@/lib/emailOtp'
 
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
-    const { email, password, username } = await request.json()
+    const { email, password, username } = await readJson(request)
 
     if (typeof password !== 'string' || password.length < 12) {
       return NextResponse.json(
@@ -43,7 +47,9 @@ export async function POST(request) {
       success: true,
       data: { email: doc.email, message: 'Enter the verification code sent to your email.' },
     }, { status: 201 })
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to register' }, { status: 500 })
   }
 }

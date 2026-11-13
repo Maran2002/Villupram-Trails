@@ -1,3 +1,5 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { getAuthUser, unauthorized, writeAudit } from '@/lib/auth'
@@ -24,9 +26,11 @@ export async function GET(request) {
 
 // POST: Create a report (Authenticated or Guest)
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
     const user = await getAuthUser(request)
-    const body = await request.json()
+    const body = await readJson(request)
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ success: false, error: 'Invalid report data' }, { status: 400 })
     }
@@ -78,6 +82,8 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data: { ...newReport, _id: result.insertedId } })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Create report error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }

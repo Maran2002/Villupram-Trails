@@ -74,8 +74,8 @@ export async function writeAudit({ userId, username, role, action, target, targe
       meta,
       createdAt: new Date(),
     })
-  } catch {
-    // Never let audit failure break the main flow
+  } catch (error) {
+    console.error('Audit write failed', { action, target, code: error.code })
   }
 }
 

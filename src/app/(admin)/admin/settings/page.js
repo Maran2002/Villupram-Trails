@@ -1,5 +1,6 @@
 'use client'
 
+import { PlaceImage } from '@/components/common/PlaceImage'
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { 
@@ -32,7 +33,6 @@ export default function AdminSettingsPage() {
       youtube: ''
     },
     seoDescription: '',
-    requirePlaceApproval: true,
     requireReviewApproval: false
   })
   
@@ -61,7 +61,7 @@ export default function AdminSettingsPage() {
     if (!file) return
     const loadingToast = toast.loading('Processing logo...')
     try {
-      const result = await compressToBase64(file, { maxWidth: 300, format: 'image/png' })
+      const result = await compressToBase64(file, { maxWidth: 560, maxHeight: 180 })
       setForm(prev => ({ ...prev, siteLogo: result.dataUrl }))
       toast.success('Logo ready!', { id: loadingToast })
     } catch (err) {
@@ -112,7 +112,7 @@ export default function AdminSettingsPage() {
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-2xl bg-neutral-50 dark:bg-dark-900 border-2 border-dashed border-neutral-200 dark:border-dark-700 flex items-center justify-center overflow-hidden">
                       {form.siteLogo ? (
-                        <img src={form.siteLogo} alt="Logo" className="w-full h-full object-contain p-2" />
+                        <PlaceImage width={360} height={120} src={form.siteLogo} alt="Logo" className="w-full h-full object-contain p-2" />
                       ) : (
                         <ImageIcon size={32} className="text-neutral-300" />
                       )}
@@ -136,7 +136,7 @@ export default function AdminSettingsPage() {
                       value={form.siteName} 
                       onChange={(e) => setForm(f => ({ ...f, siteName: e.target.value }))}
                       className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-dark-600 bg-neutral-50 dark:bg-dark-900 focus:outline-none focus:border-primary-500 text-sm font-medium"
-                      placeholder="e.g. Villupuram Hub"
+                      placeholder="e.g. Oor Thadam"
                       required
                     />
                   </div>
@@ -206,19 +206,7 @@ export default function AdminSettingsPage() {
               </h3>
               
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-dark-900 rounded-2xl border border-neutral-100 dark:border-dark-700">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-white">Require Approval for New Places</p>
-                    <p className="text-xs text-neutral-500">If enabled, places added by users will start as &quot;Pending&quot; and require admin approval.</p>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, requirePlaceApproval: !f.requirePlaceApproval }))}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${form.requirePlaceApproval ? 'bg-primary-500' : 'bg-neutral-300 dark:bg-dark-600'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.requirePlaceApproval ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">New places from contributors require admin approval. Admin submissions publish immediately.</p>
 
                 <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-dark-900 rounded-2xl border border-neutral-100 dark:border-dark-700">
                   <div className="space-y-1">

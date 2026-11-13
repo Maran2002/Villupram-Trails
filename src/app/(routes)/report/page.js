@@ -104,7 +104,7 @@ function ReportForm() {
           </div>
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4">Raise a Report</h1>
           <p className="text-neutral-600 dark:text-neutral-400 text-lg max-w-xl mx-auto">
-            Help us maintain the highest standards of safety and authenticity in Villupuram Hub.
+            Help us maintain the highest standards of safety and authenticity in Oor Thadam.
           </p>
         </motion.div>
 

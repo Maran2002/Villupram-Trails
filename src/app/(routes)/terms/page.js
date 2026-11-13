@@ -32,11 +32,11 @@ export default function TermsPage() {
         >
           <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-xl mb-8 border border-blue-100 dark:border-blue-900/50">
             <Info className="shrink-0" size={24} />
-            <p className="m-0 font-medium text-sm">Please read these terms carefully before using the Villupuram Discovery Hub platform.</p>
+            <p className="m-0 font-medium text-sm">Please read these terms carefully before using the Oor Thadam platform.</p>
           </div>
 
           <h2>1. Acceptance of Terms</h2>
-          <p>By accessing and using the Villupuram Discovery Hub (&quot;Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.</p>
+          <p>By accessing and using the Oor Thadam (&quot;Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.</p>
 
           <h2>2. User Accounts</h2>
           <p>When you create an account with us, you must provide accurate, complete, and current information. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Platform.</p>
@@ -60,7 +60,7 @@ export default function TermsPage() {
           </ul>
 
           <h2>5. Intellectual Property</h2>
-          <p>The Platform and its original content (excluding Content provided by users), features, and functionality are and will remain the exclusive property of Villupuram Discovery Hub and its licensors. The Platform is protected by copyright, trademark, and other laws.</p>
+          <p>The Platform and its original content (excluding Content provided by users), features, and functionality are and will remain the exclusive property of Oor Thadam and its licensors. The Platform is protected by copyright, trademark, and other laws.</p>
 
           <h2>6. Termination</h2>
           <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>

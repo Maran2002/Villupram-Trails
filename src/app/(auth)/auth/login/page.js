@@ -192,7 +192,7 @@ function LoginForm() {
           </p>
 
           <p className="text-center mt-6 text-sm text-neutral-500 dark:text-neutral-400">
-            New to Villupuram Hub?{' '}
+            New to Oor Thadam?{' '}
             <Link href="/auth/register" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
               Create an account
             </Link>

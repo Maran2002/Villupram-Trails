@@ -1,5 +1,5 @@
 export const metadata = {
-  title: { template: '%s | Account | Villupuram Trails', default: 'Account | Villupuram Trails' },
+  title: { template: '%s | Account | Oor Thadam', default: 'Account | Oor Thadam' },
   robots: { index: false, follow: false },
 }
 

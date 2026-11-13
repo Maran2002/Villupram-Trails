@@ -146,6 +146,11 @@ async function main() {
   ])
   console.log('✓ email verification indexes (TTL: expiry time)')
 
+  await ensureIndexes(db, 'api_rate_limits', [
+    { key: { expiresAt: 1 }, name: 'api_rate_limit_expiry_ttl', expireAfterSeconds: 0 },
+  ])
+  console.log('✓ API rate limit expiry index')
+
   /* ── audit_logs ──────────────────────────────────────────── */
   console.log('Creating audit log indexes…')
   await ensureIndexes(db, 'audit_logs', [

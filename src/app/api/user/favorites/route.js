@@ -1,3 +1,4 @@
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { getAuthUser, unauthorized } from '@/lib/auth'
@@ -21,7 +22,7 @@ export async function GET(request) {
     const favorites = await db.collection('favorites').find({ userId: user._id }).sort({ createdAt: -1 }).toArray()
     const placeIds = favorites.map((favorite) => favorite.placeId)
     const places = placeIds.length
-      ? await db.collection('places').find({ _id: { $in: placeIds }, status: 'Approved' }).toArray()
+      ? await db.collection('places').find({ _id: { $in: placeIds }, status: 'Approved' }, { projection: { images: { $slice: 1 } } }).toArray()
       : []
     const placesById = new Map(places.map((place) => [place._id.toString(), place]))
     return NextResponse.json({ success: true, data: placeIds.map((id) => placesById.get(id.toString())).filter(Boolean) })
@@ -35,7 +36,7 @@ export async function PUT(request) {
     const user = await getAuthUser(request)
     if (!user) return unauthorized()
 
-    const { placeId } = await request.json()
+    const { placeId } = await readJson(request)
     if (!ObjectId.isValid(placeId)) return NextResponse.json({ success: false, error: 'Invalid place ID' }, { status: 400 })
 
     const db = await getDb()
@@ -49,7 +50,9 @@ export async function PUT(request) {
       { upsert: true }
     )
     return NextResponse.json({ success: true, data: { saved: true } })
-  } catch {
+  } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     return NextResponse.json({ success: false, error: 'Failed to save place' }, { status: 500 })
   }
 }

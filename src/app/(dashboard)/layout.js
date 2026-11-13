@@ -1,7 +1,7 @@
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
 
 export const metadata = {
-  title: { template: '%s | Dashboard | Villupuram Trails', default: 'Dashboard | Villupuram Trails' },
+  title: { template: '%s | Dashboard | Oor Thadam', default: 'Dashboard | Oor Thadam' },
   robots: { index: false, follow: false },
 }
 

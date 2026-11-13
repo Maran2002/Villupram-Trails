@@ -1,12 +1,14 @@
+import { limitApiRequest } from '@/lib/rateLimit'
+import { readJson, requestBodyError } from '@/lib/requestJson'
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { buildVisitorLog } from '@/lib/schemas'
 
 export async function POST(request) {
+  const limited = await limitApiRequest(request)
+  if (limited) return limited
   try {
-    const contentLength = Number.parseInt(request.headers.get('content-length') || '0', 10)
-    if (contentLength > 4096) return NextResponse.json({ success: false, error: 'Request is too large' }, { status: 413 })
-    const body = await request.json()
+    const body = await readJson(request, 4096)
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ success: false, error: 'Invalid tracking data' }, { status: 400 })
     }
@@ -28,6 +30,8 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    const bodyError = requestBodyError(error)
+    if (bodyError) return bodyError
     console.error('Tracking error:', error)
     return NextResponse.json({ success: false }, { status: 500 })
   }
