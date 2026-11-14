@@ -43,10 +43,7 @@ next-env.d.ts
 
 # Markdown Files
 *.md
-!README.md
-!docs/
-!docs/audit/
-!docs/audit/*.md
+!/README.md
 
 # Sensitive Data & Environment Variables
 .env
